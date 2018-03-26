@@ -1,0 +1,254 @@
+
+%Get mouse deets
+mouseID = Untitled(2,1) ;
+sessiondate = Untitled(2,2) ;
+sessionstart = Untitled(2,3) ;
+creline = Untitled(2,4) ;
+treatmentgroup = Untitled(2,5) ;
+treatmentsession = Untitled(2,6) ;
+sex = Untitled(2,7) ;
+brainregion = Untitled(2,8) ;
+mouseID = str2double(mouseID) ;
+sessiondate = str2double(sessiondate) ;
+
+% find the OC chamber pulses:
+ocpulses = find(data(:,3)>(mean(data(1:30000,3))+1)) ;
+hzstarttime = ocpulses(1,1) ;
+ocdata = str2double(Untitled(4:end,2:end)) ;
+starttime = 60001 ;
+
+[ocrows, occolumns] = size(ocdata) ;
+
+%Create zeros matrix that is 10 times as long as our operant chamber data
+expandedSize = ocrows*10;
+expandedocdata = zeros(expandedSize, 11);
+
+%Insert operant chamber data to every 10th row starting at row 1
+for i = 1:size(ocdata, 1)
+    expandedocdata(10*i-9,:) = ocdata(i, :);
+end
+
+% determine the size of the ocdata matrix
+[ocrows, occolumns] = size(expandedocdata) ;
+
+% Start by correcting the decay trend in your fiber-ohotometry output
+% Determine the length of the recording using the number of rows 
+datarows = size(data,1) ;
+min = (datarows/1000)/60 ;
+
+% separate out the baseline for averaging/mean purposes 
+baseline = data((1:((hzstarttime)-1)),(1)) ;
+
+% Separate out fiber-photometry data for dF/F % Calculation
+F = data(:,1) ;
+time = linspace(0,min,datarows)' ;
+clear('min') ;
+clear('datarows') ;
+
+% Calculate dFF %
+dFF = (F-median(baseline))/median(baseline) ;
+clear('F','data') ;
+
+% Fit a curve to the decay trend, and correct the dF/F for it
+f = fit(time,dFF,'poly1') ;
+curfit = f.p1*time+f.p2 ;
+dFF_detrend = dFF-curfit ;
+clear('f','curfit','time','baseline','dFF') ;
+
+%correct size to automate line-up of the ocdata
+correctingforstarttime = (hzstarttime - 1) - 60000 ;
+dFF_detrend = dFF_detrend((correctingforstarttime+1):end,1) ;
+
+%Convert dFF to percentage dFF
+dFFpercent = dFF_detrend*100 ;
+clear('dFF_detrend')
+% Let's check the output size.
+rows = size(dFFpercent,1) ;
+
+% Create array for the time point setting to count down to and up from the
+% starttime
+timepoint = ((2-starttime):1:(rows-starttime+1))' ;
+
+%Create two zeros matrices to help the ocdata line up wth the fiber-photometry data  
+prezeromatrix = zeros((starttime-1),occolumns);  % the zeros to go before the ocdata
+
+postzeromatrix = zeros((rows-starttime+1-ocrows),occolumns);  % the zeros to go after the ocdata
+clear('rows') ;
+% combine the zeros matrices with the ocdata matrix
+expandedocdata = [prezeromatrix ; expandedocdata ; postzeromatrix] ;
+
+% Combine the relevant data into one matrix
+% (averages/timepoints/dFF/ocdata)
+
+dFFpercent = [timepoint dFFpercent expandedocdata] ;
+clear('timepoint','prezeromatrix','ocdata','postzeromatrix','occolumns') ;
+% Find the number of pre cue triggers and which rows they are in to cut the
+% data into trials
+precues = find((dFFpercent(:,4))>0) ;
+% Cut into trials and the two baselines (pre & post trials)
+pretrial = dFFpercent((1:starttime-1),:) ;
+posttrial = dFFpercent(((starttime+ocrows-1):end),:) ;
+posttrial = posttrial(1:60000,:) ;
+
+dFFpercent = dFFpercent(1:(precues(end,1)),:);
+
+%%%%%%%%%%% make forloop to make trialnum be the trial number
+howmanytrials = (size(precues, 1) - 1);
+prematurecount = 0 ;
+corrgocount = 0 ;
+incorrgocount = 0 ;
+corrnogocount = 0 ;
+incorrnogocount = 0 ;
+
+Precue = NaN(20, 26000); % we're putting in 20 trials of precues, but change if necessary
+Cue = NaN(20, 11000);
+Reward = NaN(20, 11000);
+ITI = NaN(20, 10010);
+trialcell = cell(20,1);
+
+thisfile = strcat(num2str(mouseID), '_', num2str(sessiondate),'_structure');
+ymax = max(dFFpercent(:,2));
+ymin = min(dFFpercent(:,2));
+y1 = [round(ymin-1):1:round((ymax+1))]';
+
+figWidth = ceil(sqrt(howmanytrials));
+figHeight = ceil(howmanytrials/figWidth);
+figure(1);
+set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 1, 0.96]);
+
+ourS = struct('Premature', struct('Precue', Precue, 'ITI', ITI), ...
+'CorrGo', struct('Precue', Precue, 'Cue', Cue, 'Reward', Reward, ...
+'ITI', ITI), ...
+'CorrNoGo', struct('Precue', Precue, 'Cue', Cue, ...
+'Reward', Reward, 'ITI', ITI), ...
+'InCorrGo', struct('Precue', Precue, 'Cue', Cue, 'ITI', ITI), ...
+'InCorrNoGo', struct('Precue', Precue, 'Cue', Cue, 'ITI', ITI), ...
+'TrialData', struct('Premature', trialcell, 'CorrGo', trialcell, 'InCorrGo', trialcell, 'CorrNoGo', trialcell, 'InCorrNoGo', trialcell));
+
+for trialnum = 1:howmanytrials
+
+trial = dFFpercent(((precues((trialnum))):(precues((trialnum)+1)-1)),:) ;
+
+if (sum(trial(:,9))) == 1  
+         prematurecount = prematurecount + 1 ;
+         ourS.TrialData(prematurecount).Premature = trial;
+         trialprecue = trial(((find((trial(:,4))==1)):((find((trial(:,9))==1)))),:) ;
+         trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
+         
+         howmanyrows = size(trialprecue,1) ;
+         ourS.Premature.Precue((prematurecount),1:(howmanyrows)) = trialprecue(:,2)';
+         ourS.Premature.ITI((prematurecount),:) = trialiti(:,2)' ;
+         
+         figure(1) ;
+subplot(figHeight, figWidth,trialnum) ;
+    plot(trial(:,2),'b','MarkerIndices',1:10000:(size(trial,1))) ;
+    title(strcat(num2str(mouseID), '-', num2str(sessiondate),' Trial ', num2str(trialnum), ' Premature'));
+    ylabel('dFF (%)');
+    xlabel('Time (s)');
+    hold on ; line([(find((trial(:,8))==1)) (find((trial(:,8))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+ %   hold on ; line([(find((trial(:,3))==1)) (find((trial(:,3))==1))],[ymin ymax], 'LineStyle','--');
+    
+elseif (sum(trial(:,10))) == 1      
+         corrgocount = corrgocount + 1 ;
+         ourS.TrialData(corrgocount).CorrGo = trial;
+         trialprecue = trial(((find((trial(:,4))==1)):((find((trial(:,5))==1)))),:) ;       
+         trialcorrgo = trial(((find((trial(:,5))==1)):((find((trial(:,7))==1)-1))),:) ;
+         trialreward = trial(((find((trial(:,7))==1)):(find(trial(:,8)==1,1,'last')-1)),:)  ;
+         trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
+         
+         howmanyrows = size(trialprecue,1) ;
+         ourS.CorrGo.Precue((corrgocount),1:(howmanyrows)) = trialprecue(:,2)';
+    
+         howmanyrows = size(trialcorrgo,1) ;
+         ourS.CorrGo.Cue((corrgocount),1:(howmanyrows)) = trialcorrgo(:,2)';
+     
+         howmanyrows = size(trialreward,1) ;
+         ourS.CorrGo.Reward((corrgocount),1:(howmanyrows)) = trialreward(:,2)';   
+         ourS.CorrGo.ITI((corrgocount),:) = trialiti(:,2)' ;
+         
+         figure(1) ;
+subplot(figHeight, figWidth,trialnum) ;
+    plot(trial(:,2),'b','MarkerIndices',1:10000:(size(trial,1))) ;
+    title(strcat(num2str(mouseID), '-', num2str(sessiondate),' Trial ', num2str(trialnum), ' CorrGo'));
+    ylabel('dFF (%)');
+    xlabel('Time (s)');
+    hold on ; line([(find((trial(:,5))==1)) (find((trial(:,5))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+    hold on ; line([(find((trial(:,7))==1)) (find((trial(:,7))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+    hold on ; line([(find((trial(:,8))==1)) (find((trial(:,8))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+    
+elseif (sum(trial(:,11))) == 1 
+         incorrgocount = incorrgocount + 1 ;
+         ourS.TrialData(incorrgocount).InCorrGo = trial;
+         trialprecue = trial(((find((trial(:,4))==1)):((find((trial(:,5))==1)))),:) ;          
+         trialincorrgo = trial(((find((trial(:,5))==1)):(find(trial(:,8)==1,1,'last')-1)),:) ;
+         trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
+           
+         howmanyrows = size(trialprecue,1) ;
+         ourS.InCorrGo.Precue((incorrgocount),1:(howmanyrows)) = trialprecue(:,2)';
+
+         howmanyrows = size(trialincorrgo,1) ;
+         ourS.InCorrGo.Cue((incorrgocount),1:(howmanyrows)) = trialincorrgo(:,2)';
+         ourS.InCorrGo.ITI((incorrgocount),:) = trialiti(:,2)' ;
+         
+         figure(1) ;
+subplot(figHeight, figWidth,trialnum) ;
+    plot(trial(:,2),'b','MarkerIndices',1:10000:(size(trial,1))) ;
+    title(strcat(num2str(mouseID), '-', num2str(sessiondate),' Trial ', num2str(trialnum), ' IncorrGo'));
+    ylabel('dFF (%)');
+    xlabel('Time (s)');
+    hold on ; line([(find((trial(:,5))==1)) (find((trial(:,5))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+    hold on ; line([(find((trial(:,8))==1)) (find((trial(:,8))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+
+elseif (sum(trial(:,12))) == 1  
+         corrnogocount = corrnogocount + 1 ;
+         ourS.TrialData(corrnogocount).CorrNoGo = trial;
+         trialprecue = trial(((find((trial(:,4))==1)):((find((trial(:,6))==1)))),:) ;      
+         trialcorrnogo = trial(((find((trial(:,6))==1)):((find((trial(:,7))==1)-1))),:) ;
+         trialreward = trial(((find((trial(:,7))==1)):(find(trial(:,8)==1,1,'last')-1)),:)  ;
+         trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
+         
+         howmanyrows = size(trialprecue,1) ;
+         ourS.CorrNoGo.Precue((corrnogocount),1:(howmanyrows)) = trialprecue(:,2)';
+
+         howmanyrows = size(trialcorrnogo,1) ;
+         ourS.CorrNoGo.Cue((corrnogocount),1:(howmanyrows)) = trialcorrnogo(:,2)';
+
+         howmanyrows = size(trialreward,1) ;
+         ourS.CorrNoGo.Reward((corrnogocount),1:(howmanyrows)) = trialreward(:,2)';
+         ourS.CorrNoGo.ITI((corrnogocount),:) = trialiti(:,2)' ;
+         
+         figure(1) ;
+subplot(figHeight, figWidth,trialnum) ;
+    plot(trial(:,2),'b','MarkerIndices',1:10000:(size(trial,1))) ;
+    title(strcat(num2str(mouseID), '-', num2str(sessiondate),' Trial ', num2str(trialnum), ' CorrNoGo'));
+    ylabel('dFF (%)');
+    xlabel('Time (s)');
+    hold on ; line([(find((trial(:,6))==1)) (find((trial(:,6))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+    hold on ; line([(find((trial(:,7))==1)) (find((trial(:,7))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+    hold on ; line([(find((trial(:,8))==1)) (find((trial(:,8))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+
+elseif (sum(trial(:,13))) == 1   
+         incorrnogocount = incorrnogocount + 1 ;
+         ourS.TrialData(incorrnogocount).InCorrNoGo = trial;
+         trialprecue = trial(((find((trial(:,4))==1)):((find((trial(:,6))==1)))),:) ;        
+         trialincorrnogo = trial(((find((trial(:,6))==1)):(find(trial(:,8)==1,1,'last')-1)),:) ;
+         trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
+
+         howmanyrows = size(trialprecue,1) ;
+         ourS.InCorrNoGo.Precue((incorrnogocount),1:(howmanyrows)) = trialprecue(:,2)';
+
+         howmanyrows = size(trialincorrnogo,1) ;
+         ourS.InCorrNoGo.Cue((incorrnogocount),1:(howmanyrows)) = trialincorrnogo(:,2)';
+         ourS.InCorrNoGo.ITI((incorrnogocount),:) = trialiti(:,2)' ;
+         
+         figure(1) ;
+subplot(figHeight, figWidth,trialnum) ;
+    plot(trial(:,2),'b','MarkerIndices',1:10000:(size(trial,1))) ;
+    title(strcat(num2str(mouseID), '-', num2str(sessiondate),' Trial ', num2str(trialnum), ' IncorrNoGo'));
+    ylabel('dFF (%)');
+    xlabel('Time (s)');
+    hold on ; line([(find((trial(:,6))==1)) (find((trial(:,6))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+    hold on ; line([(find((trial(:,8))==1)) (find((trial(:,8))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
+end
+end
+
