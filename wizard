@@ -1,3 +1,7 @@
+function wizard(data,ocdata)
+
+% import Fiber photometry data and operant chamber data as data and ocdata,
+% respectivley
 
 %Get mouse deets
 mouseID = Untitled(2,1) ;
@@ -85,6 +89,8 @@ clear('timepoint','prezeromatrix','ocdata','postzeromatrix','occolumns') ;
 % Find the number of pre cue triggers and which rows they are in to cut the
 % data into trials
 precues = find((dFFpercent(:,4))>0) ;
+howmanycues = find((dFFpercent(:,5:6))>0) ;
+howmanyrewards = find((dFFpercent(:,7))>0) ;
 % Cut into trials and the two baselines (pre & post trials)
 pretrial = dFFpercent((1:starttime-1),:) ;
 posttrial = dFFpercent(((starttime+ocrows-1):end),:) ;
@@ -108,22 +114,22 @@ y1 = [round(ymin-1):1:round((ymax+1))]';
 figWidth = ceil(sqrt(howmanytrials));
 figHeight = ceil(howmanytrials/figWidth);
 figure(1);
-set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 1, 0.96]);
+set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0, 1, 1]);
 
 ourS = struct('Precue', struct('Premature', (NaN((sum(dFFpercent(:,9))),26000)), ...
                                'CorrGo', (NaN((sum(dFFpercent(:,10))),26000)), ...
-                               'InCorrNoGo', (NaN((sum(dFFpercent(:,11))),26000)), ...
+                               'InCorrGo', (NaN((sum(dFFpercent(:,11))),26000)), ...
                                'CorrNoGo', (NaN((sum(dFFpercent(:,12))),26000)), ...
                                'InCorrNoGo', (NaN((sum(dFFpercent(:,13))),26000))), ...
               'Cue',    struct('CorrGo', (NaN((sum(dFFpercent(:,10))),11000)), ...
-                               'InCorrNoGo', (NaN((sum(dFFpercent(:,11))),11000)), ...
+                               'InCorrGo', (NaN((sum(dFFpercent(:,11))),11000)), ...
                                'CorrNoGo', (NaN((sum(dFFpercent(:,12))),11000)), ...
                                'InCorrNoGo', (NaN((sum(dFFpercent(:,13))),11000))), ...
               'Reward', struct('CorrGo', (NaN((sum(dFFpercent(:,10))),11000)), ...
                                'CorrNoGo', (NaN((sum(dFFpercent(:,12))),11000))), ...
               'ITI',    struct('Premature', (NaN((sum(dFFpercent(:,9))),10010)), ...
                                'CorrGo', (NaN((sum(dFFpercent(:,10))),10010)), ...
-                               'InCorrNoGo', (NaN((sum(dFFpercent(:,11))),10010)), ...
+                               'InCorrGo', (NaN((sum(dFFpercent(:,11))),10010)), ...
                                'CorrNoGo', (NaN((sum(dFFpercent(:,12))),10010)), ...
                                'InCorrNoGo', (NaN((sum(dFFpercent(:,13))),10010))));
 
@@ -257,104 +263,152 @@ end
 
 % Give a figure of the means with std err shaded instead of bars
 
+x1 = [1:1:25000];
+x2 = [1:1:10000];
+
 figure(2) ;
-set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 1, 0.96]);
-x1 = [1:1:26000];
-x2 = [1:1:11000];
-x3 = [1:1:10010];
+set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0, 1, 1]);
 
 if prematurecount >= 2
     
-prematureprecuemean = nanmean(ourS.Premature.Precue,1);
-prematureprecuestderr = (nanstd(ourS.Premature.Precue,1))/(prematurecount)^(1/2);
-prematureitimean = nanmean(ourS.Premature.ITI,1);
-prematureitistderr = (nanstd(ourS.Premature.ITI,1))/(prematurecount)^(1/2);
-    
+prematureprecuemean = nanmean(ourS.Precue.Premature,1);
+prematureprecuemean = prematureprecuemean(:,1:25000);
+prematureprecuestderr = (nanstd(ourS.Precue.Premature,1))/(prematurecount)^(1/2);
+prematureprecuestderr = prematureprecuestderr(:,1:25000);
+prematureitimean = nanmean(ourS.ITI.Premature,1);
+prematureitimean = prematureitimean(:,1:10000);
+prematureitistderr = (nanstd(ourS.ITI.Premature,1))/(prematurecount)^(1/2);
+prematureitistderr = prematureitistderr(:,1:10000);
+
 figure(2) ;
 subplot(2, 3, [1,3]);
-    hold on ; boundedline(x1, prematureprecuemean, prematureprecuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x1,prematureprecuemean,prematureprecuestderr);
+
 subplot(2, 3, 6);
-    hold on ; boundedline(x3, prematureitimean, prematureitistderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,prematureitimean,prematureitistderr);
+
 end
 
 if corrgocount >= 2
     
-corrgoprecuemean = nanmean(ourS.CorrGo.Precue,1);
-corrgoprecuestderr = (nanstd(ourS.CorrGo.Precue,1))/(corrgocount)^(1/2);
-corrgocuemean = nanmean(ourS.CorrGo.Cue,1);
-corrgocuestderr = (nanstd(ourS.CorrGo.Cue,1))/(corrgocount)^(1/2);
-corrgorewardmean = nanmean(ourS.CorrGo.Reward,1);
-corrgorewardstderr = (nanstd(ourS.CorrGo.Reward,1))/(corrgocount)^(1/2);
-corrgoitimean = nanmean(ourS.CorrGo.ITI,1);
-corrgoitistderr = (nanstd(ourS.CorrGo.ITI,1))/(corrgocount)^(1/2);
-    
+corrgoprecuemean = nanmean(ourS.Precue.CorrGo,1);
+corrgoprecuemean = corrgoprecuemean(:,1:25000);
+corrgoprecuestderr = (nanstd(ourS.Precue.CorrGo,1))/(corrgocount)^(1/2);
+corrgoprecuestderr = corrgoprecuestderr(:,1:25000);
+corrgocuemean = nanmean(ourS.Cue.CorrGo,1);
+corrgocuemean = corrgocuemean(:,1:10000);
+corrgocuestderr = (nanstd(ourS.Cue.CorrGo,1))/(corrgocount)^(1/2);
+corrgocuestderr = corrgocuestderr(:,1:10000);
+corrgorewardmean = nanmean(ourS.Reward.CorrGo,1);
+corrgorewardmean = corrgorewardmean(:,1:10000);
+corrgorewardstderr = (nanstd(ourS.Reward.CorrGo,1))/(corrgocount)^(1/2);
+corrgorewardstderr = corrgorewardstderr(:,1:10000);
+corrgoitimean = nanmean(ourS.ITI.CorrGo,1);
+corrgoitimean = corrgoitimean(:,1:10000);
+corrgoitistderr = (nanstd(ourS.ITI.CorrGo,1))/(corrgocount)^(1/2);
+corrgoitistderr = corrgoitistderr(:,1:10000);
+
 figure(2) ;
 subplot(2, 3, [1,3]);
-    hold on ; boundedline(x1, corrgoprecuemean, corrgoprecuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x1,corrgoprecuemean,corrgoprecuestderr);
+
 subplot(2, 3, 4);
-    hold on ; boundedline(x2, corrgocuemean, corrgocuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,corrgocuemean,corrgocuestderr); 
+
 subplot(2, 3, 5);
-    hold on ;boundedline(x2, corrgorewardmean, corrgorewardstderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,corrgorewardmean,corrgorewardstderr); 
+
 subplot(2, 3, 6);
-    hold on ; boundedline(x3, corrgoitimean, corrgoitistderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,corrgoitimean,corrgoitistderr);
+
 end
 
 if incorrgocount >= 2
     
-incorrgoprecuemean = nanmean(ourS.InCorrGo.Precue,1);
-incorrgoprecuestderr = (nanstd(ourS.InCorrGo.Precue,1))/(incorrgocount)^(1/2);
-incorrgocuemean = nanmean(ourS.InCorrGo.Cue,1);
-incorrgocuestderr = (nanstd(ourS.InCorrGo.Cue,1))/(incorrgocount)^(1/2);
-incorrgoitimean = nanmean(ourS.InCorrGo.ITI,1);
-incorrgoitistderr = (nanstd(ourS.InCorrGo.ITI,1))/(incorrgocount)^(1/2);
-    
+incorrgoprecuemean = nanmean(ourS.Precue.InCorrGo,1);
+incorrgoprecuemean = incorrgoprecuemean(:,1:25000);
+incorrgoprecuestderr = (nanstd(ourS.Precue.InCorrGo,1))/(incorrgocount)^(1/2);
+incorrgoprecuestderr = incorrgoprecuestderr(:,1:25000);
+incorrgocuemean = nanmean(ourS.Cue.InCorrGo,1);
+incorrgocuemean = incorrgocuemean(:,1:10000);
+incorrgocuestderr = (nanstd(ourS.Cue.InCorrGo,1))/(incorrgocount)^(1/2);
+incorrgocuestderr = incorrgocuestderr(:,1:10000);
+incorrgoitimean = nanmean(ourS.ITI.InCorrGo,1);
+incorrgoitimean = incorrgoitimean(:,1:10000);
+incorrgoitistderr = (nanstd(ourS.ITI.InCorrGo,1))/(incorrgocount)^(1/2);
+incorrgoitistderr = incorrgoitistderr(:,1:10000);
+
 figure(2) ;
 subplot(2, 3, [1,3]);
-    hold on ; boundedline(x1, incorrgoprecuemean, incorrgoprecuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x1,incorrgoprecuemean,incorrgoprecuestderr);
+
 subplot(2, 3, 4);
-    hold on ; boundedline(x2, incorrgocuemean, incorrgocuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,incorrgocuemean,incorrgocuestderr); 
+
 subplot(2, 3, 6);
-    hold on ; boundedline(x3, incorrgoitimean, incorrgoitistderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,incorrgoitimean,incorrgoitistderr);
+
 end
 
 if corrnogocount >= 2
     
-corrnogoprecuemean = nanmean(ourS.CorrNoGo.Precue,1);
-corrnogoprecuestderr = (nanstd(ourS.CorrNoGo.Precue,1))/(corrnogocount)^(1/2);
-corrnogocuemean = nanmean(ourS.CorrNoGo.Cue,1);
-corrnogocuestderr = (nanstd(ourS.CorrNoGo.Cue,1))/(corrnogocount)^(1/2);
-corrnogorewardmean = nanmean(ourS.CorrNoGo.Reward,1);
-corrnogorewardstderr = (nanstd(ourS.CorrNoGo.Reward,1))/(corrnogocount)^(1/2);
-corrnogoitimean = nanmean(ourS.CorrNoGo.ITI,1);
-corrnogoitistderr = (nanstd(ourS.CorrNoGo.ITI,1))/(corrnogocount)^(1/2);
-    
+corrnogoprecuemean = nanmean(ourS.Precue.CorrNoGo,1);
+corrnogoprecuemean = corrnogoprecuemean(:,1:25000);
+corrnogoprecuestderr = (nanstd(ourS.Precue.CorrNoGo,1))/(corrnogocount)^(1/2);
+corrnogoprecuestderr = corrnogoprecuestderr(:,1:25000);
+corrnogocuemean = nanmean(ourS.Cue.CorrNoGo,1);
+corrnogocuemean = corrnogocuemean(:,1:10000);
+corrnogocuestderr = (nanstd(ourS.Cue.CorrNoGo,1))/(corrnogocount)^(1/2);
+corrnogocuestderr = corrnogocuestderr(:,1:10000);
+corrnogorewardmean = nanmean(ourS.Reward.CorrNoGo,1);
+corrnogorewardmean = corrnogorewardmean(:,1:10000);
+corrnogorewardstderr = (nanstd(ourS.Reward.CorrNoGo,1))/(corrnogocount)^(1/2);
+corrnogorewardstderr = corrnogorewardstderr(:,1:10000);
+corrnogoitimean = nanmean(ourS.ITI.CorrNoGo,1);
+corrnogoitimean = corrnogoitimean(:,1:10000);
+corrnogoitistderr = (nanstd(ourS.ITI.CorrNoGo,1))/(corrnogocount)^(1/2);
+corrnogoitistderr = corrnogoitistderr(:,1:10000);
+  
 figure(2) ;
 subplot(2, 3, [1,3]);
-    hold on ; boundedline(x1, corrnogoprecuemean, corrnogoprecuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x1,corrnogoprecuemean,corrnogoprecuestderr);
+
 subplot(2, 3, 4);
-    hold on ; boundedline(x2, corrnogocuemean, corrnogocuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,corrnogocuemean,corrnogocuestderr); 
+
 subplot(2, 3, 5);
-    hold on ; boundedline(x2, corrnogorewardmean, corrnogorewardstderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,corrnogorewardmean,corrnogorewardstderr); 
+
 subplot(2, 3, 6);
-    hold on ; boundedline(x3, corrnogoprecuemean, corrnogoitistderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,corrnogoitimean,corrnogoitistderr);
+
 end
 
 if incorrnogocount >= 2
     
-incorrnogoprecuemean = nanmean(ourS.InCorrNoGo.Precue,1);
-incorrnogoprecuestderr = (nanstd(ourS.InCorrNoGo.Precue,1))/(incorrnogocount)^(1/2);
-incorrnogocuemean = nanmean(ourS.InCorrNoGo.Cue,1);
-incorrnogocuestderr = (nanstd(ourS.InCorrNoGo.Cue,1))/(incorrnogocount)^(1/2);
-incorrnogoitimean = nanmean(ourS.InCorrNoGo.ITI,1);
-incorrnogoitistderr = (nanstd(ourS.InCorrNoGo.ITI,1))/(incorrnogocount)^(1/2);
+incorrnogoprecuemean = nanmean(ourS.Precue.InCorrNoGo,1);
+incorrnogoprecuemean = incorrnogoprecuemean(:,1:25000);
+incorrnogoprecuestderr = (nanstd(ourS.Precue.InCorrNoGo,1))/(incorrnogocount)^(1/2);
+incorrnogoprecuestderr = incorrnogoprecuestderr(:,1:25000);
+incorrnogocuemean = nanmean(ourS.Cue.InCorrNoGo,1);
+incorrnogocuemean = incorrnogocuemean(:,1:10000);
+incorrnogocuestderr = (nanstd(ourS.Cue.InCorrNoGo,1))/(incorrnogocount)^(1/2);
+incorrnogocuestderr = incorrnogocuestderr(:,1:10000);
+incorrnogoitimean = nanmean(ourS.ITI.InCorrNoGo,1);
+incorrnogoitimean = incorrnogoitimean(:,1:10000);
+incorrnogoitistderr = (nanstd(ourS.ITI.InCorrNoGo,1))/(incorrnogocount)^(1/2);
+incorrnogoitistderr = incorrnogoitistderr(:,1:10000);
 
 figure(2) ;
 subplot(2, 3, [1,3]);
-    hold on ; boundedline(x1, incorrnogoprecuemean, incorrnogoprecuestderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x1,incorrnogoprecuemean,incorrnogoprecuestderr);
+
 subplot(2, 3, 4);
-    hold on ; boundedline(x2, incorrnogocuemean, incorrnogocuestderr,'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,incorrnogocuemean,incorrnogocuestderr); 
+
 subplot(2, 3, 6);
-    hold on ; boundedline(x3, incorrnogoitimean, incorrnogoitistderr, 'alpha', 'nan', 'gap');
+hold on ; shadedErrorBar(x2,incorrnogoitimean,incorrnogoitistderr);
+
 end
 
 save(thisfile,'ourS');
@@ -365,6 +419,3 @@ clc
 completionmessage
 
 end
-
-
-% John made this comment
