@@ -125,6 +125,7 @@ ourS = struct('Premature', struct('Precue', Precue, 'ITI', ITI), ...
 'InCorrNoGo', struct('Precue', Precue, 'Cue', Cue, 'ITI', ITI), ...
 'TrialData', struct('Premature', trialcell, 'CorrGo', trialcell, 'InCorrGo', trialcell, 'CorrNoGo', trialcell, 'InCorrNoGo', trialcell));
 
+
 for trialnum = 1:howmanytrials
 
 trial = dFFpercent(((precues((trialnum))):(precues((trialnum)+1)-1)),:) ;
@@ -136,8 +137,8 @@ if (sum(trial(:,9))) == 1
          trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
          
          howmanyrows = size(trialprecue,1) ;
-         ourS.Premature.Precue((prematurecount),1:(howmanyrows)) = trialprecue(:,2)';
-         ourS.Premature.ITI((prematurecount),:) = trialiti(:,2)' ;
+         ourS.Precue.Premature((prematurecount),1:(howmanyrows)) = trialprecue(:,2)';
+         ourS.ITI.Premature((prematurecount),:) = trialiti(:,2)' ;
          
          figure(1) ;
 subplot(figHeight, figWidth,trialnum) ;
@@ -157,14 +158,14 @@ elseif (sum(trial(:,10))) == 1
          trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
          
          howmanyrows = size(trialprecue,1) ;
-         ourS.CorrGo.Precue((corrgocount),1:(howmanyrows)) = trialprecue(:,2)';
+         ourS.Precue.CorrGo((corrgocount),1:(howmanyrows)) = trialprecue(:,2)';
     
          howmanyrows = size(trialcorrgo,1) ;
-         ourS.CorrGo.Cue((corrgocount),1:(howmanyrows)) = trialcorrgo(:,2)';
+         ourS.Cue.CorrGo((corrgocount),1:(howmanyrows)) = trialcorrgo(:,2)';
      
          howmanyrows = size(trialreward,1) ;
-         ourS.CorrGo.Reward((corrgocount),1:(howmanyrows)) = trialreward(:,2)';   
-         ourS.CorrGo.ITI((corrgocount),:) = trialiti(:,2)' ;
+         ourS.Reward.CorrGo((corrgocount),1:(howmanyrows)) = trialreward(:,2)';   
+         ourS.ITI.CorrGo((corrgocount),:) = trialiti(:,2)' ;
          
          figure(1) ;
 subplot(figHeight, figWidth,trialnum) ;
@@ -184,11 +185,11 @@ elseif (sum(trial(:,11))) == 1
          trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
            
          howmanyrows = size(trialprecue,1) ;
-         ourS.InCorrGo.Precue((incorrgocount),1:(howmanyrows)) = trialprecue(:,2)';
+         ourS.Precue.InCorrGo((incorrgocount),1:(howmanyrows)) = trialprecue(:,2)';
 
          howmanyrows = size(trialincorrgo,1) ;
-         ourS.InCorrGo.Cue((incorrgocount),1:(howmanyrows)) = trialincorrgo(:,2)';
-         ourS.InCorrGo.ITI((incorrgocount),:) = trialiti(:,2)' ;
+         ourS.Cue.InCorrGo((incorrgocount),1:(howmanyrows)) = trialincorrgo(:,2)';
+         ourS.ITI.InCorrGo((incorrgocount),:) = trialiti(:,2)' ;
          
          figure(1) ;
 subplot(figHeight, figWidth,trialnum) ;
@@ -208,14 +209,14 @@ elseif (sum(trial(:,12))) == 1
          trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
          
          howmanyrows = size(trialprecue,1) ;
-         ourS.CorrNoGo.Precue((corrnogocount),1:(howmanyrows)) = trialprecue(:,2)';
+         ourS.Precue.CorrNoGo((corrnogocount),1:(howmanyrows)) = trialprecue(:,2)';
 
          howmanyrows = size(trialcorrnogo,1) ;
-         ourS.CorrNoGo.Cue((corrnogocount),1:(howmanyrows)) = trialcorrnogo(:,2)';
+         ourS.Cue.CorrNoGo((corrnogocount),1:(howmanyrows)) = trialcorrnogo(:,2)';
 
          howmanyrows = size(trialreward,1) ;
-         ourS.CorrNoGo.Reward((corrnogocount),1:(howmanyrows)) = trialreward(:,2)';
-         ourS.CorrNoGo.ITI((corrnogocount),:) = trialiti(:,2)' ;
+         ourS.Reward.CorrNoGo((corrnogocount),1:(howmanyrows)) = trialreward(:,2)';
+         ourS.ITI.CorrNoGo((corrnogocount),:) = trialiti(:,2)' ;
          
          figure(1) ;
 subplot(figHeight, figWidth,trialnum) ;
@@ -235,11 +236,11 @@ elseif (sum(trial(:,13))) == 1
          trialiti = trial(((find(trial(:,8)==1,1,'last')):end),:) ;
 
          howmanyrows = size(trialprecue,1) ;
-         ourS.InCorrNoGo.Precue((incorrnogocount),1:(howmanyrows)) = trialprecue(:,2)';
+         ourS.Precue.InCorrNoGo((incorrnogocount),1:(howmanyrows)) = trialprecue(:,2)';
 
          howmanyrows = size(trialincorrnogo,1) ;
-         ourS.InCorrNoGo.Cue((incorrnogocount),1:(howmanyrows)) = trialincorrnogo(:,2)';
-         ourS.InCorrNoGo.ITI((incorrnogocount),:) = trialiti(:,2)' ;
+         ourS.Cue.InCorrNoGo((incorrnogocount),1:(howmanyrows)) = trialincorrnogo(:,2)';
+         ourS.ITI.InCorrNoGo((incorrnogocount),:) = trialiti(:,2)' ;
          
          figure(1) ;
 subplot(figHeight, figWidth,trialnum) ;
@@ -251,8 +252,6 @@ subplot(figHeight, figWidth,trialnum) ;
     hold on ; line([(find((trial(:,8))==1)) (find((trial(:,8))==1))],[ymin ymax],'Color', 'k', 'LineStyle','--');
 end
 end
-
-
 
 % Give a figure of the means with std err shaded instead of bars
 
