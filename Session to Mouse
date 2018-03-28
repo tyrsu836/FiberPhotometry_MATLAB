@@ -1,0 +1,94 @@
+%% Mouse_Data
+% Create a structure to store mouse data.
+% Find all structure files that are associated with an animal (user-input).
+% Put session data into mouse data structure. 
+% Create a variable for saving the name of this structure.
+% Save the structure.
+
+%% Create a structure to store mouse data.
+
+mouseS = struct('Precue', struct('Premature', [], ...
+                               'CorrGo', [], ...
+                               'InCorrGo', [], ...
+                               'CorrNoGo', [], ...
+                               'InCorrNoGo', []), ...
+              'Cue',    struct('CorrGo', [], ...
+                               'InCorrGo', [], ...
+                               'CorrNoGo', [], ...
+                               'InCorrNoGo', []), ...
+              'Reward', struct('CorrGo', [], ...
+                               'CorrNoGo', []), ...
+              'ITI',    struct('Premature', [], ...
+                               'CorrGo', [], ...
+                               'InCorrGo', [], ...
+                               'CorrNoGo', [], ...
+                               'InCorrNoGo', []));
+
+
+%% Find all structure files that are associated with an animal (user-input).
+
+% Input ID number of mouse to analyze
+mouse = 'Which mouse to analyze? ';
+str = input(mouse, 's');
+
+data_path = '/Users/johnwen/Google Drive/Stanford Neuroscience Graduate School/Labs/Luis de Lecea/Data/Behavioral/OneDrive_3_3-25-2018';
+windows = 0; % change to 1 if using Windows computer
+
+if windows
+    mat_files = dir([data_path,'\*.mat']);
+else
+    mat_files = dir([data_path,'/*.mat']);
+end
+
+mat_files = {mat_files.name}'; % this gives us a cell of the names of each file in the directory
+
+
+% Return indices of structure files associated with animal ID
+structures = regexp(mat_files, strcat(str,'_[0-9]*_structure'));
+
+struct_inds = find(~cellfun(@isempty, structures));
+
+%% Put session data into mouse data structure. 
+
+for i = 1:length(struct_inds)
+    
+    session_file = mat_files{struct_inds(i)};
+    
+    if windows
+        load([data_path,'\',session_file]);
+    else
+        load([data_path,'/',session_file]); 
+    end
+
+    % Add session data to mouse structure
+
+    % Collecting Precue Data
+    mouseS.Precue.Premature = [mouseS.Precue.Premature; ourS.Precue.Premature];
+    mouseS.Precue.CorrGo = [mouseS.Precue.CorrGo; ourS.Precue.CorrGo];
+    mouseS.Precue.CorrNoGo = [mouseS.Precue.CorrNoGo; ourS.Precue.CorrNoGo];
+    mouseS.Precue.InCorrGo = [mouseS.Precue.InCorrGo; ourS.Precue.InCorrGo];
+    mouseS.Precue.InCorrNoGo = [mouseS.Precue.InCorrNoGo; ourS.Precue.InCorrNoGo];   
+    
+    % Collecting Cue Data
+    mouseS.Cue.CorrGo = [mouseS.Cue.CorrGo; ourS.Cue.CorrGo];
+    mouseS.Cue.CorrNoGo = [mouseS.Cue.CorrNoGo; ourS.Cue.CorrNoGo];
+    mouseS.Cue.InCorrGo = [mouseS.Cue.InCorrGo; ourS.Cue.InCorrGo];
+    mouseS.Cue.InCorrNoGo = [mouseS.Cue.InCorrNoGo; ourS.Cue.InCorrNoGo];
+    
+    % Collecting Reward Data
+    mouseS.Reward.CorrGo = [mouseS.Reward.CorrGo; ourS.Reward.CorrGo];
+    mouseS.Reward.CorrNoGo = [mouseS.Reward.CorrNoGo; ourS.Reward.CorrNoGo];
+    
+    % Collecting ITI Data
+    mouseS.ITI.Premature = [mouseS.ITI.Premature; ourS.ITI.Premature];
+    mouseS.ITI.CorrGo = [mouseS.ITI.CorrGo; ourS.ITI.CorrGo];
+    mouseS.ITI.CorrNoGo = [mouseS.ITI.CorrNoGo; ourS.ITI.CorrNoGo];
+    mouseS.ITI.InCorrGo = [mouseS.ITI.InCorrGo; ourS.ITI.InCorrGo];
+    mouseS.ITI.InCorrNoGo = [mouseS.ITI.InCorrNoGo; ourS.ITI.InCorrNoGo];   
+   
+end
+
+
+save(thisfile,'mouseS');
+
+% Suszie commented here
