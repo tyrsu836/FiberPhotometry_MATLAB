@@ -89,6 +89,8 @@ for i = 1:length(struct_inds)
 end
 
 
-save(thisfile,'mouseS');
+filename = strcat(str, '-all-sessions-structure');
 
-% Suszie commented here
+save(filename, 'mouseS');
+
+% John commented here
