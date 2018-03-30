@@ -1,0 +1,108 @@
+%% Find all structure files that are associated with an animal (user-input).
+% Input ID number of mouse to analyze
+mouse = 'Which mouse to analyze? ';
+str = input(mouse, 's');
+
+data_path = 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\Novel Object';
+windows = 0; % change to 1 if using Windows computer
+
+if windows
+    mat_files = dir([data_path,'\*.mat']);
+else
+    mat_files = dir([data_path,'/*.mat']);
+end
+
+mat_files = {mat_files.name}'; % this gives us a cell of the names of each file in the directory
+
+% Return indices of structure files associated with animal ID
+structures = regexp(mat_files, strcat(str,'_data', '_[0-9]*'));
+
+struct_inds = find(~cellfun(@isempty, structures));
+allsessions = NaN((length(struct_inds)),120000);
+figWidth = ceil(sqrt(length(struct_inds)+1));
+figHeight = ceil((length(struct_inds)+1)/figWidth);
+
+figure(1);
+set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0, 1, 1]);
+r1 = 0;
+x1 = [-59.999 : 0.001 : 60];
+
+for i = 1:length(struct_inds)
+    
+    session_file = mat_files{struct_inds(i)};
+    
+    if windows
+        load([data_path,'\',session_file]);
+    else
+        load([data_path,'/',session_file]); 
+    end
+    
+    filename = strsplit(session_file, {'_','.'});
+    
+    r1 = r1+1;
+    
+    sec = 120;
+    baselineDur = 60;
+    hz = 1000;
+    numSamples = size(data,1);
+    baseline = data(1:baselineDur*hz)';
+    F = data(:,1);
+    dFF = (F-median(baseline))/median(baseline);
+    clear baseline; 
+    time = linspace(0,sec,numSamples)';
+    fit = fit(time,dFF,'poly1');
+    curfit = fit.p1*time + fit.p2;
+    dFF_detrend = dFF-curfit;
+    dFFPercent = (dFF_detrend*100)';
+    clear curfit;
+    clear('sec','baselineDur','hz','numSamples','F','dFF','time','fit','curfit','dFF_detrend')
+    allsessions(r1,:) = dFFPercent(:,1:120000);
+
+%     figure(1) ;
+%     subplot(figHeight, figWidth, r1) ;
+%     plot(dFFPercent(1,1:120000),'b') ;
+%     title(strcat(filename(1,1), '-', filename(1,3)),'FontSize',12,'FontName','Arial');
+%     ylabel('dF/F (%)','FontSize',10,'FontName','Arial');
+%     xlabel('Time (seconds)','FontSize',10,'FontName','Arial');
+%     hold on ; line([60000 60000], get(gca, 'ylim'));
+%     
+%     clear('sec','baselineDur','hz','numSamples','F','dFF','time','fit','curfit','dFF_detrend')
+end
+
+    allsessionsmean = nanmean(allsessions,1);
+    allsessionsSEM = (nanstd(allsessions,1))/(r1)^(1/2);
+    
+    ymin = min(min(allsessions));
+    ymax = max(max(allsessions));
+ 
+  r1 = 0;  
+  for i = 1:length(struct_inds)
+      r1 = r1 + 1;
+    figure(1) ;
+    subplot(figHeight, figWidth, r1) ;
+    plot(x1, allsessions(r1,:),'b') ;
+    title(strcat(filename(1,1), '-', filename(1,3)),'FontSize',12,'FontName','Arial');
+    ylabel('dF/F (%)','FontSize',10,'FontName','Arial'), ...
+    xlabel('Time (seconds)','FontSize',10,'FontName','Arial'), axis([-59.999 60 ymin ymax]) ;
+    hold on ; line([0 0], [ymin ymax]);
+    
+  end
+  
+    figure(1) ;
+    subplot(figHeight, figWidth, (r1+1)) ;
+       hold on ; p1 = shadedErrorBar(x1, allsessionsmean, allsessionsSEM, 'lineprops','b');
+       hold on ; title(strcat(filename(1,1), ' mean'),'FontSize',12,'FontName','Arial');
+       hold on ;  ylabel('dF/F (%)','FontSize',10,'FontName','Arial');
+       hold on ;  xlabel('Time (seconds)','FontSize',10,'FontName','Arial'), axis([-59.999 60 ymin ymax]);
+       hold on ; line([0 0], [ymin ymax]);
+
+       
+     novelobjectS = struct('allsessions', allsessions, ...
+         'allsessionsmean', allsessionsmean, ...
+         'allsessionsSEM', allsessionsSEM) ;
+
+    thisfile = strcat(filename{1,1},'_all_sessions');
+    save(thisfile,'novelobjectS');
+    
+    figure(1)
+    savefig(strcat(filename{1,1},'_all_sessions.fig'))
