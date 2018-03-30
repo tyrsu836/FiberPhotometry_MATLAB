@@ -1,0 +1,181 @@
+x1 = [0.001:0.001:25];
+x2 = [0.001:0.001:10];
+
+figure(2) ;
+set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0, 1, 1]);
+
+ymin = min([min(min([mouseS.Precue.Premature ; mouseS.Precue.CorrGo ; mouseS.Precue.InCorrGo ; mouseS.Precue.CorrNoGo ; mouseS.Precue.InCorrNoGo])) ...
+min(min([mouseS.Cue.CorrGo ; mouseS.Cue.InCorrGo ; mouseS.Cue.CorrNoGo ; mouseS.Cue.InCorrNoGo])) ...
+min(min([mouseS.Reward.CorrGo ; mouseS.Reward.CorrNoGo])) ...
+min(min([mouseS.ITI.Premature ; mouseS.ITI.CorrGo ; mouseS.ITI.InCorrGo ; mouseS.ITI.CorrNoGo ; mouseS.ITI.InCorrNoGo]))]);
+
+ymax = max([max(max([mouseS.Precue.Premature ; mouseS.Precue.CorrGo ; mouseS.Precue.InCorrGo ; mouseS.Precue.CorrNoGo ; mouseS.Precue.InCorrNoGo])) ...
+max(max([mouseS.Cue.CorrGo ; mouseS.Cue.InCorrGo ; mouseS.Cue.CorrNoGo ; mouseS.Cue.InCorrNoGo])) ...
+max(max([mouseS.Reward.CorrGo ; mouseS.Reward.CorrNoGo])) ...
+max(max([mouseS.ITI.Premature ; mouseS.ITI.CorrGo ; mouseS.ITI.InCorrGo ; mouseS.ITI.CorrNoGo ; mouseS.ITI.InCorrNoGo]))]);
+
+subplot(2, 3, [1,3]);
+hold on ; title('Precue Period'), xlabel('Time (s)'), ylabel('dF/F (%)'), axis([0 25 ymin ymax]);
+
+subplot(2, 3, 4);
+hold on ; title('Cue Period'), xlabel('Time (s)'), ylabel('dF/F (%)'), axis([0 10 ymin ymax]);
+
+subplot(2, 3, 5);
+hold on ; title('Reward Period'), xlabel('Time (s)'), ylabel('dF/F (%)'), axis([0 10 ymin ymax]);
+
+subplot(2, 3, 6);
+hold on ; title('ITI Period'), xlabel('Time (s)'), ylabel('dF/F (%)'), axis([0 10 ymin ymax]);
+
+if (size(mouseS.Precue.Premature,1)) >= 2
+    
+prematureprecuemean = nanmean(mouseS.Precue.Premature,1);
+prematureprecuemean = prematureprecuemean(:,1:25000);
+prematureprecuestderr = (nanstd(mouseS.Precue.Premature,1))/((size(mouseS.Precue.Premature,1)) )^(1/2);
+prematureprecuestderr = prematureprecuestderr(:,1:25000);
+prematureitimean = nanmean(mouseS.ITI.Premature,1);
+prematureitimean = prematureitimean(:,1:10000);
+prematureitistderr = (nanstd(mouseS.ITI.Premature,1))/((size(mouseS.Precue.Premature,1)) )^(1/2);
+prematureitistderr = prematureitistderr(:,1:10000);
+
+figure(2) ;
+subplot(2, 3, [1,3]);
+hold on ; p1 = shadedErrorBar(x1,prematureprecuemean,prematureprecuestderr,'lineprops','k');
+
+subplot(2, 3, 6);
+hold on ; shadedErrorBar(x2,prematureitimean,prematureitistderr,'lineprops','k');
+
+end
+
+if (size(mouseS.Precue.CorrGo,1)) >= 2
+    
+corrgoprecuemean = nanmean(mouseS.Precue.CorrGo,1);
+corrgoprecuemean = corrgoprecuemean(:,1:25000);
+corrgoprecuestderr = (nanstd(mouseS.Precue.CorrGo,1))/((size(mouseS.Precue.CorrGo,1)))^(1/2);
+corrgoprecuestderr = corrgoprecuestderr(:,1:25000);
+corrgocuemean = nanmean(mouseS.Cue.CorrGo,1);
+corrgocuemean = corrgocuemean(:,1:10000);
+corrgocuestderr = (nanstd(mouseS.Cue.CorrGo,1))/((size(mouseS.Precue.CorrGo,1)))^(1/2);
+corrgocuestderr = corrgocuestderr(:,1:10000);
+corrgorewardmean = nanmean(mouseS.Reward.CorrGo,1);
+corrgorewardmean = corrgorewardmean(:,1:10000);
+corrgorewardstderr = (nanstd(mouseS.Reward.CorrGo,1))/((size(mouseS.Precue.CorrGo,1)))^(1/2);
+corrgorewardstderr = corrgorewardstderr(:,1:10000);
+corrgoitimean = nanmean(mouseS.ITI.CorrGo,1);
+corrgoitimean = corrgoitimean(:,1:10000);
+corrgoitistderr = (nanstd(mouseS.ITI.CorrGo,1))/((size(mouseS.Precue.CorrGo,1)))^(1/2);
+corrgoitistderr = corrgoitistderr(:,1:10000);
+
+figure(2) ;
+subplot(2, 3, [1,3]);
+hold on ; p2 = shadedErrorBar(x1,corrgoprecuemean,corrgoprecuestderr,'lineprops','g');
+
+subplot(2, 3, 4);
+hold on ; shadedErrorBar(x2,corrgocuemean,corrgocuestderr,'lineprops','g'); 
+
+subplot(2, 3, 5);
+hold on ; shadedErrorBar(x2,corrgorewardmean,corrgorewardstderr,'lineprops','g'); 
+
+subplot(2, 3, 6);
+hold on ; shadedErrorBar(x2,corrgoitimean,corrgoitistderr,'lineprops','g');
+
+end
+
+if (size(mouseS.Precue.InCorrGo,1)) >= 2
+    
+incorrgoprecuemean = nanmean(mouseS.Precue.InCorrGo,1);
+incorrgoprecuemean = incorrgoprecuemean(:,1:25000);
+incorrgoprecuestderr = (nanstd(mouseS.Precue.InCorrGo,1))/((size(mouseS.Precue.InCorrGo,1)))^(1/2);
+incorrgoprecuestderr = incorrgoprecuestderr(:,1:25000);
+incorrgocuemean = nanmean(mouseS.Cue.InCorrGo,1);
+incorrgocuemean = incorrgocuemean(:,1:10000);
+incorrgocuestderr = (nanstd(mouseS.Cue.InCorrGo,1))/((size(mouseS.Precue.InCorrGo,1)))^(1/2);
+incorrgocuestderr = incorrgocuestderr(:,1:10000);
+incorrgoitimean = nanmean(mouseS.ITI.InCorrGo,1);
+incorrgoitimean = incorrgoitimean(:,1:10000);
+incorrgoitistderr = (nanstd(mouseS.ITI.InCorrGo,1))/((size(mouseS.Precue.InCorrGo,1)))^(1/2);
+incorrgoitistderr = incorrgoitistderr(:,1:10000);
+
+figure(2) ;
+subplot(2, 3, [1,3]);
+hold on ; p3 = shadedErrorBar(x1,incorrgoprecuemean,incorrgoprecuestderr,'lineprops','b');
+
+subplot(2, 3, 4);
+hold on ; shadedErrorBar(x2,incorrgocuemean,incorrgocuestderr,'lineprops','b'); 
+
+subplot(2, 3, 6);
+hold on ; shadedErrorBar(x2,incorrgoitimean,incorrgoitistderr,'lineprops','b');
+
+end
+
+if (size(mouseS.Precue.CorrNoGo,1)) >= 2
+    
+corrnogoprecuemean = nanmean(mouseS.Precue.CorrNoGo,1);
+corrnogoprecuemean = corrnogoprecuemean(:,1:25000);
+corrnogoprecuestderr = (nanstd(mouseS.Precue.CorrNoGo,1))/((size(mouseS.Precue.CorrNoGo,1)))^(1/2);
+corrnogoprecuestderr = corrnogoprecuestderr(:,1:25000);
+corrnogocuemean = nanmean(mouseS.Cue.CorrNoGo,1);
+corrnogocuemean = corrnogocuemean(:,1:10000);
+corrnogocuestderr = (nanstd(mouseS.Cue.CorrNoGo,1))/((size(mouseS.Precue.CorrNoGo,1)))^(1/2);
+corrnogocuestderr = corrnogocuestderr(:,1:10000);
+corrnogorewardmean = nanmean(mouseS.Reward.CorrNoGo,1);
+corrnogorewardmean = corrnogorewardmean(:,1:10000);
+corrnogorewardstderr = (nanstd(mouseS.Reward.CorrNoGo,1))/((size(mouseS.Precue.CorrNoGo,1)))^(1/2);
+corrnogorewardstderr = corrnogorewardstderr(:,1:10000);
+corrnogoitimean = nanmean(mouseS.ITI.CorrNoGo,1);
+corrnogoitimean = corrnogoitimean(:,1:10000);
+corrnogoitistderr = (nanstd(mouseS.ITI.CorrNoGo,1))/((size(mouseS.Precue.CorrNoGo,1)))^(1/2);
+corrnogoitistderr = corrnogoitistderr(:,1:10000);
+  
+figure(2) ;
+subplot(2, 3, [1,3]);
+hold on ; p4 = shadedErrorBar(x1,corrnogoprecuemean,corrnogoprecuestderr,'lineprops','r');
+
+subplot(2, 3, 4);
+hold on ; shadedErrorBar(x2,corrnogocuemean,corrnogocuestderr,'lineprops','r'); 
+
+subplot(2, 3, 5);
+hold on ; shadedErrorBar(x2,corrnogorewardmean,corrnogorewardstderr,'lineprops','r'); 
+
+subplot(2, 3, 6);
+hold on ; shadedErrorBar(x2,corrnogoitimean,corrnogoitistderr,'lineprops','r');
+
+end
+
+if (size(mouseS.Precue.InCorrNoGo,1)) >= 2
+    
+incorrnogoprecuemean = nanmean(mouseS.Precue.InCorrNoGo,1);
+incorrnogoprecuemean = incorrnogoprecuemean(:,1:25000);
+incorrnogoprecuestderr = (nanstd(mouseS.Precue.InCorrNoGo,1))/((size(mouseS.Precue.InCorrNoGo,1)))^(1/2);
+incorrnogoprecuestderr = incorrnogoprecuestderr(:,1:25000);
+incorrnogocuemean = nanmean(mouseS.Cue.InCorrNoGo,1);
+incorrnogocuemean = incorrnogocuemean(:,1:10000);
+incorrnogocuestderr = (nanstd(mouseS.Cue.InCorrNoGo,1))/((size(mouseS.Precue.InCorrNoGo,1)))^(1/2);
+incorrnogocuestderr = incorrnogocuestderr(:,1:10000);
+incorrnogoitimean = nanmean(mouseS.ITI.InCorrNoGo,1);
+incorrnogoitimean = incorrnogoitimean(:,1:10000);
+incorrnogoitistderr = (nanstd(mouseS.ITI.InCorrNoGo,1))/((size(mouseS.Precue.InCorrNoGo,1)))^(1/2);
+incorrnogoitistderr = incorrnogoitistderr(:,1:10000);
+
+figure(2) ;
+subplot(2, 3, [1,3]);
+hold on ; p5 = shadedErrorBar(x1,incorrnogoprecuemean,incorrnogoprecuestderr,'lineprops','m');
+
+subplot(2, 3, 4);
+hold on ; shadedErrorBar(x2,incorrnogocuemean,incorrnogocuestderr,'lineprops','m'); 
+
+subplot(2, 3, 6);
+hold on ; shadedErrorBar(x2,incorrnogoitimean,incorrnogoitistderr,'lineprops','m');
+
+end
+
+
+figure(2) ;
+subplot(2, 3, [1,3]);
+legend([p1.mainLine p2.mainLine p3.mainLine p4.mainLine p5.mainLine],...
+'Premature', 'Correct Go', 'Incorrect Go', 'Correct NoGo', 'Incorrect NoGo');
+
+
+mouseID = input('Which mouse are we talking about here? ','s');
+
+figure(2)
+savefig(strcat(mouseID, '-means-all-sessions.fig'));
