@@ -1,0 +1,81 @@
+%% Group_data
+% Load groups mat file
+% Add mouse data for each group into its corresponding matrix. 
+% Calculate the mean and SEM.
+% Save group data, mean, and SEM into structure. 
+
+%% Load groups mat file
+
+if ~exist('groups.mat')
+    groups = NaN(20, 2);
+    save groups groups
+else
+    load('groups.mat')
+end
+
+% Make sure to enter mouse ID numbers into their appropriate columns
+save groups groups
+load('groups.mat')
+
+%% Put mouse data into group data 
+
+% Add group names as needed. This will be used for saving purposes.
+groupnames = {'TH+', 'TH-'};
+
+columns = size(groups, 2);
+num_mice = sum(~isnan(groups), 1); % returns number of mice per group
+
+% For loop to collect all mouse data of a group into a matrix
+for i = 1:columns 
+    groupnovel = [];
+                             
+    for j = 1:num_mice(i)
+        
+        str = num2str(groups(j, i));
+       
+        windows = 0;
+        data_path = '/Users/johnwen/Google Drive/Stanford Neuroscience Graduate School/Labs/Luis de Lecea/Data/Behavioral/OneDrive_3_3-25-2018';
+
+        if windows
+            load([data_path,'\',strcat(str, '_all_sessions.mat')]);
+        else
+            load([data_path,'/',strcat(str, '_all_sessions.mat')]);
+        end
+        
+        % Take one mouse's novel object data and put into group matrix
+        groupnovel = [groupnovel; novelobjectS.allsessions];
+      
+        % Do some calculations, save into a structure, and make group figure
+        if j == num_mice(i)
+            groupnovelmean = mean(groupnovel, 1);
+            groupnovelSEM = std(groupnovel, 1)/(num_mice(i))^(1/2);
+            
+            groupnovelobjectS = struct('groupnovel', groupnovel, ...
+            'groupnovelmean', groupnovelmean, ...
+            'groupnovelSEM', groupnovelSEM) ;
+
+            filename = strcat(groupnames{i}, '_group_novel_object_structure');
+
+            save(filename, 'groupnovelobjectS');
+            
+            % code to make figure of group means and save that figure 
+            
+            figure(1) ;
+            subplot(1, columns, i) ;
+            x1 = [-59.999 : 0.001 : 60];
+            hold on ; p1 = shadedErrorBar(x1, groupnovelmean, groupnovelSEM,...
+                'lineprops','b');
+            hold on ; title(strcat(groupnames{i}, ' mean'),'FontSize',12, ...
+                'FontName','Arial');
+            hold on ;  ylabel('dF/F (%)','FontSize',10,'FontName','Arial');
+            hold on ;  xlabel('Time (seconds)','FontSize',10,'FontName','Arial'), ...
+                axis([-59.999 60 -20 50]);
+            hold on ; line([0 0], [-20 50]);
+            
+            savefig(strcat(groupnames{i},'group_novel_object.fig'))
+            
+        end     
+    
+    end
+
+end
