@@ -47,7 +47,7 @@ for i = 1:columns
                              
     for j = 1:num_mice(i)
         
-        str = num2str(groups(i, j));
+        str = num2str(groups(j, i));
        
         windows = 0;
         data_path = '/Users/johnwen/Google Drive/Stanford Neuroscience Graduate School/Labs/Luis de Lecea/Data/Behavioral/OneDrive_3_3-25-2018';
