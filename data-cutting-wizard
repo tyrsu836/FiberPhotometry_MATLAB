@@ -1,0 +1,479 @@
+
+% import Fiber photometry data and operant chamber data as data and ocdata,
+% respectivley
+
+%Get mouse deets
+mouseID = Untitled(2,1) ;
+sessiondate = Untitled(2,2) ;
+sessionstart = Untitled(2,3) ;
+creline = Untitled(2,4) ;
+treatmentgroup = Untitled(2,5) ;
+treatmentsession = Untitled(2,6) ;
+sex = Untitled(2,7) ;
+brainregion = Untitled(2,8) ;
+mouseID = str2double(mouseID) ;
+sessiondate = str2double(sessiondate) ;
+
+% find the OC chamber pulses:
+ocpulses = find(data(:,3)>(mean(data(1:30000,3))+1)) ;
+hzstarttime = ocpulses(1,1) ;
+ocdata = str2double(Untitled(4:end,2:end)) ;
+starttime = 60001 ;
+
+[ocrows, occolumns] = size(ocdata) ;
+
+%Create zeros matrix that is 10 times as long as our operant chamber data
+expandedSize = ocrows*10;
+expandedocdata = zeros(expandedSize, 11);
+
+%Insert operant chamber data to every 10th row starting at row 1
+for i = 1:size(ocdata, 1)
+    expandedocdata(10*i-9,:) = ocdata(i, :);
+end
+
+% determine the size of the ocdata matrix
+[ocrows, occolumns] = size(expandedocdata) ;
+
+% Start by correcting the decay trend in your fiber-ohotometry output
+% Determine the length of the recording using the number of rows 
+datarows = size(data,1) ;
+min = (datarows/1000)/60 ;
+
+% separate out the baseline for averaging/mean purposes 
+baseline = data((1:((hzstarttime)-1)),(1)) ;
+
+% Separate out fiber-photometry data for dF/F % Calculation
+F = data(:,1) ;
+time = linspace(0,min,datarows)' ;
+clear('min') ;
+clear('datarows') ;
+
+% Calculate dFF %
+dFF = (F-median(baseline))/median(baseline) ;
+clear('F','data') ;
+
+% Fit a curve to the decay trend, and correct the dF/F for it
+f = fit(time,dFF,'poly1') ;
+curfit = f.p1*time+f.p2 ;
+dFF_detrend = dFF-curfit ;
+clear('f','curfit','time','baseline','dFF') ;
+
+%correct size to automate line-up of the ocdata
+correctingforstarttime = (hzstarttime - 1) - 60000 ;
+dFF_detrend = dFF_detrend((correctingforstarttime+1):end,1) ;
+
+%Convert dFF to percentage dFF
+dFFpercent = dFF_detrend*100 ;
+clear('dFF_detrend')
+% Let's check the output size.
+rows = size(dFFpercent,1) ;
+
+% Create array for the time point setting to count down to and up from the
+% starttime
+timepoint = ((2-starttime):1:(rows-starttime+1))' ;
+
+%Create two zeros matrices to help the ocdata line up wth the fiber-photometry data  
+prezeromatrix = zeros((starttime-1),occolumns);  % the zeros to go before the ocdata
+
+postzeromatrix = zeros((rows-starttime+1-ocrows),occolumns);  % the zeros to go after the ocdata
+clear('rows') ;
+% combine the zeros matrices with the ocdata matrix
+expandedocdata = [prezeromatrix ; expandedocdata ; postzeromatrix] ;
+
+% Combine the relevant data into one matrix
+% (averages/timepoints/dFF/ocdata)
+
+dFFpercent = [timepoint dFFpercent expandedocdata] ;
+clear('timepoint','prezeromatrix','ocdata','postzeromatrix','occolumns') ;
+% Find the number of pre cue triggers and which rows they are in to cut the
+% data into trials
+precues = find((dFFpercent(:,4))>0) ;
+howmanycues = find((dFFpercent(:,5:6))>0) ;
+howmanyrewards = find((dFFpercent(:,7))>0) ;
+% Cut into trials and the two baselines (pre & post trials)
+pretrial = dFFpercent((1:starttime-1),:) ;
+posttrial = dFFpercent(((starttime+ocrows-1):end),:) ;
+posttrial = posttrial(1:60000,:) ;
+
+dFFpercent = dFFpercent(1:(precues(end,1)+5000),:);
+
+%%%%%%%%%%% make forloop to make trialnum be the trial number
+howmanytrials = (size(precues, 1) - 1);
+prematurecount = 0 ;
+corrgocount = 0 ;
+incorrgocount = 0 ;
+corrnogocount = 0 ;
+incorrnogocount = 0 ;
+
+ourS = struct(               'Precue',      struct('Premature', (NaN(sum(dFFpercent(:,9)),26000)), ...
+                                                   'CorrGo', (NaN(sum(dFFpercent(:,10)),26000)), ...
+                                                   'InCorrGo', (NaN(sum(dFFpercent(:,11)),26000)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),26000)), ...
+                                                   'InCorrNoGo', (NaN(sum(dFFpercent(:,13)),26000))), ...
+                             'Cue',         struct('CorrGo', (NaN(sum(dFFpercent(:,10)),11000)), ...
+                                                   'InCorrGo', (NaN(sum(dFFpercent(:,11)),11000)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),11000)), ...
+                                                   'InCorrNoGo', (NaN(sum(dFFpercent(:,13)),11000))), ...
+                             'Reward',      struct('CorrGo', (NaN(sum(dFFpercent(:,10)),11000)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),11000))), ...
+                             'ITI',         struct('Premature', (NaN(sum(dFFpercent(:,9)),10010)), ...
+                                                   'CorrGo', (NaN(sum(dFFpercent(:,10)),10010)), ...
+                                                   'InCorrGo', (NaN(sum(dFFpercent(:,11)),10010)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),10010)), ...
+                                                   'InCorrNoGo', (NaN(sum(dFFpercent(:,13)),10010)))) ;
+nosepokeS = struct(          'Precue',      struct('Premature', NaN(1,10000), ...
+                                                   'CorrGo', NaN(1,10000), ...
+                                                   'InCorrGo', NaN(1,10000), ...
+                                                   'CorrNoGo', NaN(1,10000), ...
+                                                   'InCorrNoGo', NaN(1,10000)), ...
+                             'Cue',         struct('CorrGo', NaN(1,10000), ...
+                                                   'InCorrNoGo', NaN(1,10000)), ...
+                             'Reward',      struct('CorrGo', NaN(1,10000), ...
+                                                   'CorrNoGo', NaN(1,10000)), ...
+                             'ITI',         struct('Premature', NaN(1,10000), ...
+                                                   'CorrGo', NaN(1,10000), ...
+                                                   'InCorrGo', NaN(1,10000), ...
+                                                   'CorrNoGo', NaN(1,10000), ...
+                                                   'InCorrNoGo', NaN(1,10000))) ;
+transitionS = struct(       'ITI2Precue',   struct('Premature', (NaN(sum(dFFpercent(:,9)),10000)), ...
+                                                   'CorrGo', (NaN(sum(dFFpercent(:,10)),10000)), ...
+                                                   'InCorrGo', (NaN(sum(dFFpercent(:,11)),10000)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),10000)), ...
+                                                   'InCorrNoGo', (NaN(sum(dFFpercent(:,13)),10000))), ...
+                            'Precue2ITI',   struct('Premature', (NaN(sum(dFFpercent(:,9)),10000))), ...
+                            'Precue2Cue',   struct('CorrGo', (NaN(sum(dFFpercent(:,10)),10000)), ...
+                                                   'InCorrGo', (NaN(sum(dFFpercent(:,11)),10000)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),10000)), ...
+                                                   'InCorrNoGo', (NaN(sum(dFFpercent(:,13)),10000))), ...
+                            'Cue2ITI',      struct('InCorrGo', (NaN(sum(dFFpercent(:,11)),10000)), ...
+                                                   'InCorrNoGo', (NaN(sum(dFFpercent(:,13)),10000))), ...
+                            'Cue2Reward',   struct('CorrGo', (NaN(sum(dFFpercent(:,10)),10000)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),10000))), ...
+                            'Reward2ITI',   struct('CorrGo', (NaN(sum(dFFpercent(:,10)),10000)), ...
+                                                   'CorrNoGo', (NaN(sum(dFFpercent(:,12)),10000)))) ;
+
+for trialnum = 1:howmanytrials
+
+trial = dFFpercent(((precues(trialnum,1)-5000):(precues((trialnum+1),1)+5000)),:) ;
+precuestartrow = (find(trial(:,4)==1)) ;
+precuestartrow = precuestartrow(1,1) ;
+itistartrow = find(trial(:,8)==1,1,'last') ;
+
+if (sum(trial(:,9))) == 1  
+         prematurecount = prematurecount + 1 ;
+         ourS.TrialData(prematurecount).Premature = trial;
+         trialprecue = trial(precuestartrow:(itistartrow-1),:) ;
+         trialiti = trial(itistartrow:(itistartrow+10009),:) ;
+         
+         howmanyrows = size(trialprecue,1) ;
+         ourS.Precue.Premature(prematurecount,1:howmanyrows) = trialprecue(:,2)';
+         ourS.ITI.Premature(prematurecount,:) = trialiti(:,2)' ;
+
+         transitionS.ITI2Precue.Premature(prematurecount,:) = (trial((precuestartrow-4999):(precuestartrow+5000),2))' ;
+         transitionS.Precue2ITI.Premature(prematurecount,:) = (trial((itistartrow-4999):(itistartrow+5000),2))' ;
+
+         precuenosepokes = find(trial(precuestartrow:(itistartrow),3)>=1) ;
+         itinosepokes = find(trial(itistartrow:(itistartrow+10009),3)>=1) ;
+         if size(precuenosepokes) >= 1
+         for np = 1:size(precuenosepokes)
+             nosepokeS.Precue.Premature = [ nosepokeS.Precue.Premature ; (trial((precuenosepokes(np,1)+precuestartrow-4999):(precuenosepokes(np,1)+precuestartrow+5000),2))'] ;
+         end
+         end
+         if size(itinosepokes) >= 1
+         for np = 1:size(itinosepokes)
+             nosepokeS.ITI.Premature = [nosepokeS.ITI.Premature; (trial((itinosepokes(np,1)+itistartrow-4999):(itinosepokes(np,1)+itistartrow+5000),2))'] ;
+         end
+         end
+         
+elseif (sum(trial(:,10))) == 1      
+         corrgocount = corrgocount + 1 ;
+         cuestartrow = (find((trial(:,5))==1)) ; 
+         rewardstartrow = (find((trial(:,7))==1)) ;
+         
+         ourS.TrialData(corrgocount).CorrGo = trial;
+         trialprecue = trial(precuestartrow:(cuestartrow-1),:) ;       
+         trialcorrgo = trial(cuestartrow:(rewardstartrow-1),:) ;
+         trialreward = trial(rewardstartrow:(itistartrow-1),:)  ;
+         trialiti = trial(itistartrow:(itistartrow+10009),:) ;
+         
+         howmanyrows = size(trialprecue,1) ;
+         ourS.Precue.CorrGo(corrgocount,1:(howmanyrows)) = trialprecue(:,2)';
+    
+         howmanyrows = size(trialcorrgo,1) ;
+         ourS.Cue.CorrGo(corrgocount,1:(howmanyrows)) = trialcorrgo(:,2)';
+     
+         howmanyrows = size(trialreward,1) ;
+         ourS.Reward.CorrGo(corrgocount,1:(howmanyrows)) = trialreward(:,2)';   
+         ourS.ITI.CorrGo(corrgocount,:) = trialiti(:,2)' ;
+
+         transitionS.ITI2Precue.CorrGo(corrgocount,:) = (trial((precuestartrow-4999):(precuestartrow+5000),2))' ;
+         transitionS.Reward2ITI.CorrGo(corrgocount,:) = (trial((itistartrow-4999):(itistartrow+5000),2))' ;
+         
+         if howmanyrows >= 5000
+         transitionS.Precue2Cue.CorrGo(corrgocount,:) = (trial((cuestartrow-4999):(cuestartrow+5000),2))' ;
+         transitionS.Cue2Reward.CorrGo(corrgocount,:) = (trial((rewardstartrow-4999):(rewardstartrow+5000),2))' ;
+         else 
+             
+             howmanynans = 5000-howmanyrows ;
+             NaNcue = [NaN(howmanynans,1) ; trial(cuestartrow:(itistartrow-1),2) ; trial(itistartrow:(itistartrow+4999),2)] ;
+             cueNaN = [trial((cuestartrow-5000):(cuestartrow-1),2)  ; trial(cuestartrow:(itistartrow-1),2) ; NaN(howmanynans,1)] ;
+             transitionS.Precue2Cue.CorrGo(corrgocount,:) = cueNaN' ;
+             transitionS.Cue2ITI.CorrGo(corrgocount,:) = NaNcue' ;
+         end
+
+         precuenosepokes = find(trial(precuestartrow:(cuestartrow),3)>=1) ;
+         cuenosepokes = find(trial(cuestartrow:(rewardstartrow),3)>=1) ;
+         rewardnosepokes = find(trial(rewardstartrow:(itistartrow),3)>=1) ;
+         itinosepokes = find(trial(itistartrow:((itistartrow+10009)),3)>=1) ;
+         
+         if size(precuenosepokes) >= 1
+         for np = 1:size(precuenosepokes)
+             nosepokeS.Precue.CorrGo = [nosepokeS.Precue.CorrGo; trial((precuenosepokes(np,1)+precuestartrow-4999):(precuenosepokes(np,1)+precuestartrow+5000),2)'] ;
+         end
+         end
+         if size(cuenosepokes) >= 1
+         for np = 1:size(cuenosepokes)
+             nosepokeS.Cue.CorrGo = [nosepokeS.Cue.CorrGo; trial((cuenosepokes(np,1)+cuestartrow-4999):(cuenosepokes(np,1)+cuestartrow+5000),2)'] ;
+         end
+         end
+         if size(rewardnosepokes) >= 1
+         for np = 1:size(rewardnosepokes)
+             nosepokeS.Reward.CorrGo = [nosepokeS.Reward.CorrGo; trial((rewardnosepokes(np,1)+rewardstartrow-4999):(rewardnosepokes(np,1)+rewardstartrow+5000),2)'] ;
+         end
+         end
+         
+         if size(itinosepokes) >= 1
+         for np = 1:size(itinosepokes)
+             nosepokeS.ITI.CorrGo = [nosepokeS.ITI.CorrGo; trial((itinosepokes(np,1)+itistartrow-4999):(itinosepokes(np,1)+itistartrow+5000),2)'] ;
+         end
+         end      
+elseif (sum(trial(:,11))) == 1 
+         incorrgocount = incorrgocount + 1 ;
+         cuestartrow = (find((trial(:,5))==1)) ;
+         ourS.TrialData(incorrgocount).InCorrGo = trial;
+         trialprecue = trial(precuestartrow:(cuestartrow-1),:) ;          
+         trialincorrgo = trial(cuestartrow:(itistartrow-1),:) ;
+         trialiti = trial(itistartrow:(itistartrow+10009),:) ;
+           
+         howmanyrows = size(trialprecue,1) ;
+         ourS.Precue.InCorrGo(incorrgocount,1:howmanyrows) = trialprecue(:,2)';
+
+         howmanyrows = size(trialincorrgo,1) ;
+         ourS.Cue.InCorrGo(incorrgocount,1:howmanyrows) = trialincorrgo(:,2)';
+         ourS.ITI.InCorrGo(incorrgocount,:) = trialiti(1:10010,2)' ;
+
+         transitionS.ITI2Precue.InCorrGo(incorrgocount,:) = (trial((precuestartrow-4999):(precuestartrow+5000),2))' ;
+         transitionS.Precue2Cue.InCorrGo(incorrgocount,:) = (trial((cuestartrow-4999):(cuestartrow+5000),2))' ;
+         transitionS.Cue2ITI.InCorrGo(incorrgocount,:) = (trial((itistartrow-4999):(itistartrow+5000),2))' ;
+
+         precuenosepokes = find(trial(precuestartrow:(cuestartrow),3)>=1) ;
+         itinosepokes = find(trial(itistartrow:((itistartrow+10009)),3)>=1) ;
+         if size(precuenosepokes) >= 1
+         for np = 1:size(precuenosepokes)
+             nosepokeS.Precue.InCorrGo = [nosepokeS.Precue.InCorrGo; trial((precuenosepokes(np,1)+precuestartrow-4999):(precuenosepokes(np,1)+precuestartrow+5000),2)'] ;
+         end
+         end
+
+         if size(itinosepokes) >= 1
+         for np = 1:size(itinosepokes)
+             nosepokeS.ITI.InCorrGo = [nosepokeS.ITI.InCorrGo; trial((itinosepokes(np,1)+itistartrow-4999):(itinosepokes(np,1)+itistartrow+5000),2)'] ;
+         end
+         end
+         
+elseif (sum(trial(:,12))) == 1  
+         corrnogocount = corrnogocount + 1 ;
+         cuestartrow = (find((trial(:,6))==1)) ; 
+         rewardstartrow = (find((trial(:,7))==1)) ;
+         ourS.TrialData(corrnogocount).CorrNoGo = trial;
+         trialprecue = trial(precuestartrow:(cuestartrow-1),:) ;      
+         trialcorrnogo = trial(cuestartrow:(rewardstartrow-1),:) ;
+         trialreward = trial((rewardstartrow:(itistartrow-1)),:)  ;
+         trialiti = trial(itistartrow:(itistartrow+10009),:) ;
+         
+         howmanyrows = size(trialprecue,1) ;
+         ourS.Precue.CorrNoGo(corrnogocount,1:howmanyrows) = trialprecue(:,2)';
+
+         howmanyrows = size(trialcorrnogo,1) ;
+         ourS.Cue.CorrNoGo(corrnogocount,1:howmanyrows) = trialcorrnogo(:,2)';
+
+         howmanyrows = size(trialreward,1) ;
+         ourS.Reward.CorrNoGo(corrnogocount,1:howmanyrows) = trialreward(:,2)';
+         ourS.ITI.CorrNoGo(corrnogocount,:) = trialiti(:,2)' ;
+
+         transitionS.ITI2Precue.CorrNoGo(corrnogocount,:) = (trial((precuestartrow-4999):(precuestartrow+5000),2))' ;
+         transitionS.Precue2Cue.CorrNoGo(corrnogocount,:) = (trial((cuestartrow-4999):(cuestartrow+5000),2))' ;
+         transitionS.Cue2Reward.CorrNoGo(corrnogocount,:) = (trial((rewardstartrow-4999):(rewardstartrow+5000),2))' ;
+         transitionS.Reward2ITI.CorrNoGo(corrnogocount,:) = (trial((itistartrow-4999):(itistartrow+5000),2))' ;  
+
+         precuenosepokes = find(trial(precuestartrow:(cuestartrow),3)>=1) ;
+         rewardnosepokes = find(trial(rewardstartrow:(itistartrow),3)>=1) ;
+         itinosepokes = find(trial(itistartrow:(itistartrow+10009),3)>=1) ;
+         
+         if size(precuenosepokes) >= 1
+         for np = 1:size(precuenosepokes)
+             nosepokeS.Precue.CorrNoGo = [nosepokeS.Precue.CorrNoGo; trial((precuenosepokes(np,1)+precuestartrow-4999):(precuenosepokes(np,1)+precuestartrow+5000),2)'] ;
+         end
+         end
+         
+         if size(rewardnosepokes) >= 1
+         for np = 1:size(rewardnosepokes)
+             nosepokeS.Reward.CorrNoGo = [nosepokeS.Reward.CorrNoGo; trial((rewardnosepokes(np,1)+rewardstartrow-4999):(rewardnosepokes(np,1)+rewardstartrow+5000),2)'] ;
+         end
+         end
+         
+         if size(itinosepokes) >= 1
+         for np = 1:size(itinosepokes)
+             nosepokeS.ITI.CorrNoGo = [nosepokeS.ITI.CorrNoGo; trial((itinosepokes(np,1)+itistartrow-4999):(itinosepokes(np,1)+itistartrow+5000),2)'] ;
+         end
+         end
+
+elseif (sum(trial(:,13))) == 1   
+         incorrnogocount = incorrnogocount + 1 ;
+         cuestartrow = (find((trial(:,6))==1)) ;
+         ourS.TrialData(incorrnogocount).InCorrNoGo = trial;
+         trialprecue = trial(precuestartrow:(cuestartrow-1),:) ;        
+         trialincorrnogo = trial(cuestartrow:(itistartrow-1),:) ;
+         trialiti = trial(itistartrow:(itistartrow+10009),:) ;
+
+         howmanyrows = size(trialprecue,1) ;
+         ourS.Precue.InCorrNoGo(incorrnogocount,1:(howmanyrows)) = trialprecue(:,2)';
+
+         howmanyrows = size(trialincorrnogo,1) ;
+         ourS.Cue.InCorrNoGo(incorrnogocount,1:(howmanyrows)) = trialincorrnogo(:,2)';
+         ourS.ITI.InCorrNoGo(incorrnogocount,:) = trialiti(:,2)' ;
+
+         transitionS.ITI2Precue.InCorrNoGo(incorrnogocount,:) = (trial((precuestartrow-4999):(precuestartrow+5000),2))' ;
+         
+         if howmanyrows >= 5000
+             
+         transitionS.Precue2Cue.InCorrNoGo(incorrnogocount,:) = (trial((cuestartrow-4999):(cuestartrow+5000),2))' ;
+         transitionS.Cue2ITI.InCorrNoGo(incorrnogocount,:) = (trial((itistartrow-4999):(itistartrow+5000),2))' ;
+         else 
+             howmanynans = 5000-howmanyrows ;
+             NaNcue = [NaN((howmanynans),1) ; trial(cuestartrow:(itistartrow-1),2) ; trial(itistartrow:(itistartrow+4999),2)] ;
+             cueNaN = [trial((cuestartrow-5000):(cuestartrow-1),2) ; trial(cuestartrow:(itistartrow-1),2) ; NaN(howmanynans,1)] ;
+             transitionS.Precue2Cue.InCorrNoGo(incorrnogocount,:) = cueNaN' ;
+             transitionS.Cue2ITI.InCorrNoGo(incorrnogocount,:) = NaNcue' ;
+         end
+
+         precuenosepokes = find(trial(precuestartrow:(cuestartrow),3)>=1) ;
+         cuenosepokes = find(trial(cuestartrow:(itistartrow),3)>=1) ;
+         itinosepokes = find(trial(itistartrow:(itistartrow+10009),3)>=1) ;
+         if size(precuenosepokes) >= 1
+         for np = 1:size(precuenosepokes)
+             nosepokeS.Precue.InCorrNoGo = [nosepokeS.Precue.InCorrNoGo; trial((precuenosepokes(np,1)+precuestartrow-4999):(precuenosepokes(np,1)+precuestartrow+5000),2)'] ;
+         end
+         end
+         if size(cuenosepokes) >= 1
+         for np = 1:size(cuenosepokes)
+             nosepokeS.Cue.InCorrNoGo = [nosepokeS.Cue.InCorrNoGo; trial((cuenosepokes(np,1)+cuestartrow-4999):(cuenosepokes(np,1)+cuestartrow+5000),2)'] ;
+         end
+         end
+         if size(itinosepokes) >= 1
+         for np = 1:size(itinosepokes)
+             nosepokeS.ITI.InCorrNoGo = [nosepokeS.ITI.InCorrNoGo; trial((itinosepokes(np,1)+itistartrow-4999):(itinosepokes(np,1)+itistartrow+5000),2)'] ;
+         end
+         end
+end
+end
+
+
+
+if size(nosepokeS.Precue.Premature,1) >= 2
+    nosepokeS.Precue.Premature = nosepokeS.Precue.Premature(2:end,:) ;
+else
+    nosepokeS.Precue.Premature = [] ;
+end
+
+if size(nosepokeS.Precue.CorrGo,1) >= 2
+    nosepokeS.Precue.CorrGo = nosepokeS.Precue.CorrGo(2:end,:) ;
+else
+    nosepokeS.Precue.CorrGo = [] ;
+end
+
+if size(nosepokeS.Precue.InCorrGo,1) >= 2
+    nosepokeS.Precue.InCorrGo = nosepokeS.Precue.InCorrGo(2:end,:) ;
+else
+    nosepokeS.Precue.InCorrGo = [] ;
+end
+
+if size(nosepokeS.Precue.CorrNoGo,1) >= 2
+    nosepokeS.Precue.CorrNoGo = nosepokeS.Precue.CorrNoGo(2:end,:) ;
+else
+    nosepokeS.Precue.CorrNoGo = [] ;
+end
+
+if size(nosepokeS.Precue.InCorrNoGo,1) >= 2
+    nosepokeS.Precue.InCorrNoGo = nosepokeS.Precue.InCorrNoGo(2:end,:) ;
+else
+    nosepokeS.Precue.InCorrNoGo = [] ;
+end
+
+if size(nosepokeS.Cue.CorrGo,1) >= 2
+    nosepokeS.Cue.CorrGo = nosepokeS.Cue.CorrGo(2:end,:) ;
+else
+    nosepokeS.Cue.CorrGo = [] ;
+end
+
+if size(nosepokeS.Cue.InCorrNoGo,1) >= 2
+    nosepokeS.Cue.InCorrNoGo = nosepokeS.Cue.InCorrNoGo(2:end,:) ;
+else
+    nosepokeS.Cue.InCorrNoGo = [] ;
+end
+
+if size(nosepokeS.Reward.CorrGo,1) >= 2
+    nosepokeS.Reward.CorrGo = nosepokeS.Reward.CorrGo(2:end,:) ;
+else
+    nosepokeS.Reward.CorrGo = [] ;
+end
+
+if size(nosepokeS.Reward.CorrGo,1) >= 2
+    nosepokeS.Reward.CorrGo = nosepokeS.Reward.CorrGo(2:end,:) ;
+else
+    nosepokeS.Reward.CorrGo = [] ;
+end
+
+if size(nosepokeS.ITI.Premature,1) >= 2
+    nosepokeS.ITI.Premature = nosepokeS.ITI.Premature(2:end,:) ;
+else
+    nosepokeS.ITI.Premature = [] ;
+end
+
+if size(nosepokeS.ITI.CorrGo,1) >= 2
+    nosepokeS.ITI.CorrGo = nosepokeS.ITI.CorrGo(2:end,:) ;
+else
+    nosepokeS.ITI.CorrGo = [] ;
+end
+
+if size(nosepokeS.ITI.InCorrGo,1) >= 2
+    nosepokeS.ITI.InCorrGo = nosepokeS.ITI.InCorrGo(2:end,:) ;
+else
+    nosepokeS.ITI.InCorrGo = [] ;
+end
+
+if size(nosepokeS.ITI.CorrNoGo,1) >= 2
+    nosepokeS.ITI.CorrNoGo = nosepokeS.ITI.CorrNoGo(2:end,:) ;
+else
+    nosepokeS.ITI.CorrNoGo = [] ;
+end
+
+if size(nosepokeS.ITI.InCorrNoGo,1) >= 2
+    nosepokeS.ITI.InCorrNoGo = nosepokeS.ITI.InCorrNoGo(2:end,:) ;
+else
+    nosepokeS.ITI.InCorrNoGo = [] ;
+end
+
+cd 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Trial Periods\Session Data'
+ourSfilename = strcat(num2str(mouseID), '_', num2str(sessiondate),'_ourS_structure');
+save(ourSfilename,'ourS');
+
+cd 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Nosepokes\Session Data'
+nosepokeSfilename = strcat(num2str(mouseID), '_', num2str(sessiondate),'_nosepokeS_structure');
+save(nosepokeSfilename,'nosepokeS');
+
+cd 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Transitions\Session Data'
+transitionSfilename = strcat(num2str(mouseID), '_', num2str(sessiondate),'_transitionS_structure');
+save(transitionSfilename,'transitionS');
+
+clear
+clc
