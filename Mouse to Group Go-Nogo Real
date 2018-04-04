@@ -1,0 +1,183 @@
+%% Group_data
+% Load groups mat file
+% Add mouse data for each group into its corresponding group structure. 
+% Save the structure.
+
+
+%% Load groups mat file
+
+if ~exist('groups.mat')
+    groups = NaN(20, 2);
+    save groups groups
+else
+    load('groups.mat')
+end
+
+% Make sure to enter mouse ID numbers into their appropriate columns
+save groups groups
+
+%% Put mouse data into group data 
+
+% Add group names as needed. This will be used for saving purposes.
+groupnames = {'TH+', 'TH-'};
+
+columns = size(groups, 2);
+num_mice = sum(~isnan(groups), 1); % returns number of mice per group
+
+% For loop to collect all mouse data of a group into a structure
+for i = 1:columns 
+    
+    groupS = struct('Precue', struct('Premature', [], ...
+                                   'CorrGo', [], ...
+                                   'InCorrGo', [], ...
+                                   'CorrNoGo', [], ...
+                                   'InCorrNoGo', []), ...
+                  'Cue',    struct('CorrGo', [], ...
+                                   'InCorrGo', [], ...
+                                   'CorrNoGo', [], ...
+                                   'InCorrNoGo', []), ...
+                  'Reward', struct('CorrGo', [], ...
+                                   'CorrNoGo', []), ...
+                  'ITI',    struct('Premature', [], ...
+                                   'CorrGo', [], ...
+                                   'InCorrGo', [], ...
+                                   'CorrNoGo', [], ...
+                                   'InCorrNoGo', []));
+                               
+    groupnosepokeS = struct('Precue', struct('Premature', [], ...
+                                        'CorrGo', [], ...
+                                        'InCorrGo', [], ...
+                                        'CorrNoGo', [], ...
+                                        'InCorrNoGo', []), ...
+                     'Cue', struct('CorrGo', [], ...
+                                   'InCorrNoGo', []), ...
+                     'Reward', struct('CorrGo', [], ...
+                                      'CorrNoGo', []), ...
+                     'ITI', struct('Premature', [], ...
+                                   'CorrGo', [], ...
+                                   'InCorrGo', [], ...
+                                   'CorrNoGo', [], ...
+                                   'InCorrNoGo', [])) ;
+                                       
+    grouptransitionS = struct('ITI2Precue',   struct('Premature', [], ...
+                                                 'CorrGo', [], ...
+                                                 'InCorrGo', [], ...
+                                                 'CorrNoGo', [], ...
+                                                 'InCorrNoGo', []), ...
+                          'Precue2ITI',   struct('Premature', []), ...
+                          'Precue2Cue',   struct('CorrGo', [], ...
+                                                 'InCorrGo', [], ...
+                                                 'CorrNoGo', [], ...
+                                                 'InCorrNoGo', []), ...
+                          'Cue2ITI',      struct('InCorrGo', [], ...
+                                                 'InCorrNoGo', []), ...
+                          'Cue2Reward',   struct('CorrGo', [], ...
+                                                 'CorrNoGo', []), ...
+                          'Reward2ITI',   struct('CorrGo', [], ...
+                                                 'CorrNoGo', [])) ;                               
+                             
+    for j = 1:num_mice(i)
+        
+        str = num2str(groups(j, i));
+       
+        % Add mouse data to group structure
+        windows = 0;
+        data_path = '/Users/johnwen/Google Drive/Stanford Neuroscience Graduate School/Labs/Luis de Lecea/Data/Behavioral/OneDrive_3_3-25-2018';
+
+        if windows
+            load([data_path,'\',strcat(str, '_mouseS_Go_NoGo_structure')]);
+        else
+            load([data_path,'/',strcat(str, '_mouseS_Go_NoGo_structure')]);
+        end
+
+        % Collecting Precue Data
+        groupS.Precue.Premature = [groupS.Precue.Premature; mouseS.Precue.Premature];
+        groupS.Precue.CorrGo = [groupS.Precue.CorrGo; mouseS.Precue.CorrGo];
+        groupS.Precue.CorrNoGo = [groupS.Precue.CorrNoGo; mouseS.Precue.CorrNoGo];
+        groupS.Precue.InCorrGo = [groupS.Precue.InCorrGo; mouseS.Precue.InCorrGo];
+        groupS.Precue.InCorrNoGo = [groupS.Precue.InCorrNoGo; mouseS.Precue.InCorrNoGo];   
+
+        % Collecting Cue Data
+        groupS.Cue.CorrGo = [groupS.Cue.CorrGo; mouseS.Cue.CorrGo];
+        groupS.Cue.CorrNoGo = [groupS.Cue.CorrNoGo; mouseS.Cue.CorrNoGo];
+        groupS.Cue.InCorrGo = [groupS.Cue.InCorrGo; mouseS.Cue.InCorrGo];
+        groupS.Cue.InCorrNoGo = [groupS.Cue.InCorrNoGo; mouseS.Cue.InCorrNoGo];
+
+        % Collecting Reward Data
+        groupS.Reward.CorrGo = [groupS.Reward.CorrGo; mouseS.Reward.CorrGo];
+        groupS.Reward.CorrNoGo = [groupS.Reward.CorrNoGo; mouseS.Reward.CorrNoGo];
+
+        % Collecting ITI Data
+        groupS.ITI.Premature = [groupS.ITI.Premature; mouseS.ITI.Premature];
+        groupS.ITI.CorrGo = [groupS.ITI.CorrGo; mouseS.ITI.CorrGo];
+        groupS.ITI.CorrNoGo = [groupS.ITI.CorrNoGo; mouseS.ITI.CorrNoGo];
+        groupS.ITI.InCorrGo = [groupS.ITI.InCorrGo; mouseS.ITI.InCorrGo];
+        groupS.ITI.InCorrNoGo = [groupS.ITI.InCorrNoGo; mouseS.ITI.InCorrNoGo];   
+        
+         
+        % Add mouse data to groupnosepokeS  
+        % Collecting Precue Data
+        groupnosepokeS.Precue.Premature = [groupnosepokeS.Precue.Premature; mousenosepokeS.Precue.Premature];
+        groupnosepokeS.Precue.CorrGo = [groupnosepokeS.Precue.CorrGo; mousenosepokeS.Precue.CorrGo];
+        groupnosepokeS.Precue.CorrNoGo = [groupnosepokeS.Precue.CorrNoGo; mousenosepokeS.Precue.CorrNoGo];
+        groupnosepokeS.Precue.InCorrGo = [groupnosepokeS.Precue.InCorrGo; mousenosepokeS.Precue.InCorrGo];
+        groupnosepokeS.Precue.InCorrNoGo = [groupnosepokeS.Precue.InCorrNoGo; mousenosepokeS.Precue.InCorrNoGo];   
+
+        % Collecting Cue Data
+        groupnosepokeS.Cue.CorrGo = [groupnosepokeS.Cue.CorrGo; mousenosepokeS.Cue.CorrGo];
+        groupnosepokeS.Cue.InCorrNoGo = [groupnosepokeS.Cue.InCorrNoGo; mousenosepokeS.Cue.InCorrNoGo];
+
+        % Collecting Reward Data
+        groupnosepokeS.Reward.CorrGo = [groupnosepokeS.Reward.CorrGo; mousenosepokeS.Reward.CorrGo];
+        groupnosepokeS.Reward.CorrNoGo = [groupnosepokeS.Reward.CorrNoGo; mousenosepokeS.Reward.CorrNoGo];
+
+        % Collecting ITI Data
+        groupnosepokeS.ITI.Premature = [groupnosepokeS.ITI.Premature; mousenosepokeS.ITI.Premature];
+        groupnosepokeS.ITI.CorrGo = [groupnosepokeS.ITI.CorrGo; mousenosepokeS.ITI.CorrGo];
+        groupnosepokeS.ITI.CorrNoGo = [groupnosepokeS.ITI.CorrNoGo; mousenosepokeS.ITI.CorrNoGo];
+        groupnosepokeS.ITI.InCorrGo = [groupnosepokeS.ITI.InCorrGo; mousenosepokeS.ITI.InCorrGo];
+        groupnosepokeS.ITI.InCorrNoGo = [groupnosepokeS.ITI.InCorrNoGo; mousenosepokeS.ITI.InCorrNoGo];
+
+
+        % Add mouse data to grouptransitionS
+        % Collecting ITI2Precue Data
+        grouptransitionS.ITI2Precue.Premature = [grouptransitionS.ITI2Precue.Premature; mousetransitionS.ITI2Precue.Premature];
+        grouptransitionS.ITI2Precue.CorrGo = [grouptransitionS.ITI2Precue.CorrGo; mousetransitionS.ITI2Precue.CorrGo]; 
+        grouptransitionS.ITI2Precue.InCorrGo = [grouptransitionS.ITI2Precue.InCorrGo; mousetransitionS.ITI2Precue.InCorrGo];
+        grouptransitionS.ITI2Precue.CorrNoGo = [grouptransitionS.ITI2Precue.CorrNoGo; mousetransitionS.ITI2Precue.CorrNoGo];
+        grouptransitionS.ITI2Precue.InCorrNoGo = [grouptransitionS.ITI2Precue.InCorrNoGo; mousetransitionS.ITI2Precue.InCorrNoGo];
+
+        % Collecting Precue2ITI Data
+        grouptransitionS.Precue2ITI.Premature = [grouptransitionS.Precue2ITI.Premature; mousetransitionS.Precue2ITI.Premature]; 
+
+        % Collecting Precue2Cue Data
+        grouptransitionS.Precue2Cue.CorrGo = [grouptransitionS.Precue2Cue.CorrGo; mousetransitionS.Precue2Cue.CorrGo];
+        grouptransitionS.Precue2Cue.InCorrGo = [grouptransitionS.Precue2Cue.InCorrGo; mousetransitionS.Precue2Cue.InCorrGo];
+        grouptransitionS.Precue2Cue.CorrNoGo = [grouptransitionS.Precue2Cue.CorrNoGo; mousetransitionS.Precue2Cue.CorrNoGo];
+        grouptransitionS.Precue2Cue.InCorrNoGo = [grouptransitionS.Precue2Cue.InCorrNoGo; mousetransitionS.Precue2Cue.InCorrNoGo];
+
+        % Collecting Cue2ITI Data
+        grouptransitionS.Cue2ITI.InCorrGo = [grouptransitionS.Cue2ITI.InCorrGo; mousetransitionS.Cue2ITI.InCorrGo];
+        grouptransitionS.Cue2ITI.InCorrNoGo = [grouptransitionS.Cue2ITI.InCorrNoGo; mousetransitionS.Cue2ITI.InCorrNoGo];
+
+        % Collecting Cue2Reward Data
+        grouptransitionS.Cue2Reward.CorrGo = [grouptransitionS.Cue2Reward.CorrGo; mousetransitionS.Cue2Reward.CorrGo];
+        grouptransitionS.Cue2Reward.CorrNoGo = [grouptransitionS.Cue2Reward.CorrNoGo; mousetransitionS.Cue2Reward.CorrNoGo];
+
+        % Collecting Reward2ITI Data
+        grouptransitionS.Reward2ITI.CorrGo = [grouptransitionS.Reward2ITI.CorrGo; mousetransitionS.Reward2ITI.CorrGo];
+        grouptransitionS.Reward2ITI.CorrNoGo = [grouptransitionS.Reward2ITI.CorrNoGo; mousetransitionS.Reward2ITI.CorrNoGo];         
+        
+        
+        filename = strcat(groupnames{i}, '_group_structure');
+        save(filename, 'groupS');
+        
+        filename2 = strcat(groupnames{i}, '_groupnosepokeS_Go_NoGo_structure');
+        save(filename2, 'groupnosepokeS');
+
+        filename3 = strcat(groupnames{i}, '_grouptransitionS_Go_NoGo_structure');
+        save(filename3, 'grouptransitionS')
+        
+    end
+   
+end
