@@ -1,0 +1,214 @@
+%% Mouse_Data
+% Create a structure to store mouse data.
+% Find all structure files that are associated with an animal (user-input).
+% Put session data into mouse data structures. 
+% Create a variable for saving the name of these structures.
+% Save the structures. 
+
+%% Create a structure to store mouse data.
+
+mouseS = struct('Precue', struct('Premature', [], ...
+                               'CorrGo', [], ...
+                               'InCorrGo', [], ...
+                               'CorrNoGo', [], ...
+                               'InCorrNoGo', []), ...
+              'Cue',    struct('CorrGo', [], ...
+                               'InCorrGo', [], ...
+                               'CorrNoGo', [], ...
+                               'InCorrNoGo', []), ...
+              'Reward', struct('CorrGo', [], ...
+                               'CorrNoGo', []), ...
+              'ITI',    struct('Premature', [], ...
+                               'CorrGo', [], ...
+                               'InCorrGo', [], ...
+                               'CorrNoGo', [], ...
+                               'InCorrNoGo', []));
+
+mousenosepokeS =   struct('Precue', struct('Premature', [], ...
+                                        'CorrGo', [], ...
+                                        'InCorrGo', [], ...
+                                        'CorrNoGo', [], ...
+                                        'InCorrNoGo', []), ...
+                     'Cue', struct('CorrGo', [], ...
+                                   'InCorrNoGo', []), ...
+                     'Reward', struct('CorrGo', [], ...
+                                      'CorrNoGo', []), ...
+                     'ITI', struct('Premature', [], ...
+                                   'CorrGo', [], ...
+                                   'InCorrGo', [], ...
+                                   'CorrNoGo', [], ...
+                                   'InCorrNoGo', [])) ;
+                                       
+mousetransitionS = struct('ITI2Precue',   struct('Premature', [], ...
+                                                 'CorrGo', [], ...
+                                                 'InCorrGo', [], ...
+                                                 'CorrNoGo', [], ...
+                                                 'InCorrNoGo', []), ...
+                          'Precue2ITI',   struct('Premature', []), ...
+                          'Precue2Cue',   struct('CorrGo', [], ...
+                                                 'InCorrGo', [], ...
+                                                 'CorrNoGo', [], ...
+                                                 'InCorrNoGo', []), ...
+                          'Cue2ITI',      struct('InCorrGo', [], ...
+                                                 'InCorrNoGo', []), ...
+                          'Cue2Reward',   struct('CorrGo', [], ...
+                                                 'CorrNoGo', []), ...
+                          'Reward2ITI',   struct('CorrGo', [], ...
+                                                 'CorrNoGo', [])) ;
+
+%% Find all structure files that are associated with an animal (user-input).
+
+% Input ID number of mouse to analyze
+mouse = 'Which mouse to analyze? ';
+str = input(mouse, 's');
+
+data_path = '/Users/johnwen/Google Drive/Stanford Neuroscience Graduate School/Labs/Luis de Lecea/Data/Behavioral/OneDrive_3_3-25-2018';
+windows = 0; % change to 1 if using Windows computer
+
+if windows
+    mat_files = dir([data_path,'\*.mat']);
+else
+    mat_files = dir([data_path,'/*.mat']);
+end
+
+mat_files = {mat_files.name}'; % this gives us a cell of the names of each file in the directory
+
+
+% Return indices of structure files associated with animal ID
+ourS_structures = regexp(mat_files, strcat(str,'_[0-9]*_ourS_structure'));
+ourS_struct_inds = find(~cellfun(@isempty, ourS_structures));
+
+nosepokeS_structures = regexp(mat_files, strcat(str,'_[0-9]*_nosepokeS_structure'));
+nosepokeS_struct_inds = find(~cellfun(@isempty, nosepokeS_structures));
+
+transitionS_structures = regexp(mat_files, strcat(str,'_[0-9]*_transitionS_structure'));
+transitionS_struct_inds = find(~cellfun(@isempty, transitionS_structures));
+
+%% Add session data into mouse data structures
+
+% Add session data to mouseS structure
+for i = 1:length(ourS_struct_inds)
+    
+    session_file = mat_files{ourS_struct_inds(i)};
+    
+    if windows
+        load([data_path,'\',session_file]);
+    else
+        load([data_path,'/',session_file]); 
+    end
+
+    % Collecting Precue Data
+    mouseS.Precue.Premature = [mouseS.Precue.Premature; ourS.Precue.Premature];
+    mouseS.Precue.CorrGo = [mouseS.Precue.CorrGo; ourS.Precue.CorrGo];
+    mouseS.Precue.CorrNoGo = [mouseS.Precue.CorrNoGo; ourS.Precue.CorrNoGo];
+    mouseS.Precue.InCorrGo = [mouseS.Precue.InCorrGo; ourS.Precue.InCorrGo];
+    mouseS.Precue.InCorrNoGo = [mouseS.Precue.InCorrNoGo; ourS.Precue.InCorrNoGo];   
+    
+    % Collecting Cue Data
+    mouseS.Cue.CorrGo = [mouseS.Cue.CorrGo; ourS.Cue.CorrGo];
+    mouseS.Cue.CorrNoGo = [mouseS.Cue.CorrNoGo; ourS.Cue.CorrNoGo];
+    mouseS.Cue.InCorrGo = [mouseS.Cue.InCorrGo; ourS.Cue.InCorrGo];
+    mouseS.Cue.InCorrNoGo = [mouseS.Cue.InCorrNoGo; ourS.Cue.InCorrNoGo];
+    
+    % Collecting Reward Data
+    mouseS.Reward.CorrGo = [mouseS.Reward.CorrGo; ourS.Reward.CorrGo];
+    mouseS.Reward.CorrNoGo = [mouseS.Reward.CorrNoGo; ourS.Reward.CorrNoGo];
+    
+    % Collecting ITI Data
+    mouseS.ITI.Premature = [mouseS.ITI.Premature; ourS.ITI.Premature];
+    mouseS.ITI.CorrGo = [mouseS.ITI.CorrGo; ourS.ITI.CorrGo];
+    mouseS.ITI.CorrNoGo = [mouseS.ITI.CorrNoGo; ourS.ITI.CorrNoGo];
+    mouseS.ITI.InCorrGo = [mouseS.ITI.InCorrGo; ourS.ITI.InCorrGo];
+    mouseS.ITI.InCorrNoGo = [mouseS.ITI.InCorrNoGo; ourS.ITI.InCorrNoGo];   
+   
+end
+
+    
+% Add session data to mousenosepokeS
+for i = 1:length(nosepokeS_struct_inds)
+    
+    session_file = mat_files{nosepokeS_struct_inds(i)};
+    
+    if windows
+        load([data_path,'\',session_file]);
+    else
+        load([data_path,'/',session_file]); 
+    end
+    
+    % Collecting Precue Data
+    mousenosepokeS.Precue.Premature = [mousenosepokeS.Precue.Premature; ourS.Precue.Premature];
+    mousenosepokeS.Precue.CorrGo = [mousenosepokeS.Precue.CorrGo; ourS.Precue.CorrGo];
+    mousenosepokeS.Precue.CorrNoGo = [mousenosepokeS.Precue.CorrNoGo; ourS.Precue.CorrNoGo];
+    mousenosepokeS.Precue.InCorrGo = [mousenosepokeS.Precue.InCorrGo; ourS.Precue.InCorrGo];
+    mousenosepokeS.Precue.InCorrNoGo = [mousenosepokeS.Precue.InCorrNoGo; ourS.Precue.InCorrNoGo];   
+    
+    % Collecting Cue Data
+    mousenosepokeS.Cue.CorrGo = [mousenosepokeS.Cue.CorrGo; ourS.Cue.CorrGo];
+    mousenosepokeS.Cue.InCorrNoGo = [mousenosepokeS.Cue.InCorrNoGo; ourS.Cue.InCorrNoGo];
+    
+    % Collecting Reward Data
+    mousenosepokeS.Reward.CorrGo = [mousenosepokeS.Reward.CorrGo; ourS.Reward.CorrGo];
+    mousenosepokeS.Reward.CorrNoGo = [mousenosepokeS.Reward.CorrNoGo; ourS.Reward.CorrNoGo];
+    
+    % Collecting ITI Data
+    mousenosepokeS.ITI.Premature = [mousenosepokeS.ITI.Premature; ourS.ITI.Premature];
+    mousenosepokeS.ITI.CorrGo = [mousenosepokeS.ITI.CorrGo; ourS.ITI.CorrGo];
+    mousenosepokeS.ITI.CorrNoGo = [mousenosepokeS.ITI.CorrNoGo; ourS.ITI.CorrNoGo];
+    mousenosepokeS.ITI.InCorrGo = [mousenosepokeS.ITI.InCorrGo; ourS.ITI.InCorrGo];
+    mousenosepokeS.ITI.InCorrNoGo = [mousenosepokeS.ITI.InCorrNoGo; ourS.ITI.InCorrNoGo];
+    
+end
+
+    
+% Add session data to mousetransitionS
+for i = 1:length(transitionS_struct_inds)
+    
+    session_file = mat_files{transitionS_struct_inds(i)};
+    
+    if windows
+        load([data_path,'\',session_file]);
+    else
+        load([data_path,'/',session_file]); 
+    end
+
+    
+    % Collecting ITI2Precue Data
+    mousetransitionS.ITI2Precue.Premature = [mousetransitionS.ITI2Precue.Premature; transitionS.ITI2Precue.Premature];
+    mousetransitionS.ITI2Precue.CorrGo = [mousetransitionS.ITI2Precue.CorrGo; transitionS.ITI2Precue.CorrGo]; 
+    mousetransitionS.ITI2Precue.InCorrGo = [mousetransitionS.ITI2Precue.InCorrGo; transitionS.ITI2Precue.InCorrGo];
+    mousetransitionS.ITI2Precue.CorrNoGo = [mousetransitionS.ITI2Precue.CorrNoGo; transitionS.ITI2Precue.CorrNoGo];
+    mousetransitionS.ITI2Precue.InCorrNoGo = [mousetransitionS.ITI2Precue.InCorrNoGo; transitionS.ITI2Precue.InCorrNoGo];
+    
+    % Collecting Precue2ITI Data
+    mousetransitionS.Precue2ITI.Premature = [mousetransitionS.Precue2ITI.Premature; transitionS.Precue2ITI.Premature]; 
+    
+    % Collecting Precue2Cue Data
+    mousetransitionS.Precue2Cue.CorrGo = [mousetransitionS.Precue2Cue.CorrGo; transitionS.Precue2Cue.CorrGo];
+    mousetransitionS.Precue2Cue.InCorrGo = [mousetransitionS.Precue2Cue.InCorrGo; transitionS.Precue2Cue.InCorrGo];
+    mousetransitionS.Precue2Cue.CorrNoGo = [mousetransitionS.Precue2Cue.CorrNoGo; transitionS.Precue2Cue.CorrNoGo];
+    mousetransitionS.Precue2Cue.InCorrNoGo = [mousetransitionS.Precue2Cue.InCorrNoGo; transitionS.Precue2Cue.InCorrNoGo];
+    
+    % Collecting Cue2ITI Data
+    mousetransitionS.Cue2ITI.InCorrGo = [mousetransitionS.Cue2ITI.InCorrGo; transitionS.Cue2ITI.InCorrGo];
+    mousetransitionS.Cue2ITI.InCorrNoGo = [mousetransitionS.Cue2ITI.InCorrNoGo; transitionS.Cue2ITI.InCorrNoGo];
+    
+    % Collecting Cue2Reward Data
+    mousetransitionS.Cue2Reward.CorrGo = [mousetransitionS.Cue2Reward.CorrGo; transitionS.Cue2Reward.CorrGo];
+    mousetransitionS.Cue2Reward.CorrNoGo = [mousetransitionS.Cue2Reward.CorrNoGo; transitionS.Cue2Reward.CorrNoGo];
+    
+    % Collecting Reward2ITI Data
+    mousetransitionS.Reward2ITI.CorrGo = [mousetransitionS.Reward2ITI.CorrGo; transitionS.Reward2ITI.CorrGo];
+    mousetransitionS.Reward2ITI.CorrNoGo = [mousetransitionS.Reward2ITI.CorrNoGo; transitionS.Reward2ITI.CorrNoGo]; 
+    
+end
+
+%% Save Structures
+
+filename = strcat(str, '_mouseS_Go_NoGo_structure');
+save(filename, 'mouseS');
+
+filename2 = strcat(str, '_mousenosepokeS_Go_NoGo_structure');
+save(filename2, 'mousenosepokeS');
+
+filename3 = strcat(str, '_mousetransitionS_Go_NoGo_structure');
+save(filename3, 'mousetransitionS')
