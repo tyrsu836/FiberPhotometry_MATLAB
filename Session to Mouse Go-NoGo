@@ -62,7 +62,7 @@ mousetransitionS = struct('ITI2Precue',   struct('Premature', [], ...
 mouse = 'Which mouse to analyze? ';
 str = input(mouse, 's');
 
-data_path = '/Users/johnwen/Google Drive/Stanford Neuroscience Graduate School/Labs/Luis de Lecea/Data/Behavioral/OneDrive_3_3-25-2018';
+data_path = 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Trial Periods\Session Data';
 windows = 0; % change to 1 if using Windows computer
 
 if windows
@@ -77,12 +77,6 @@ mat_files = {mat_files.name}'; % this gives us a cell of the names of each file 
 % Return indices of structure files associated with animal ID
 ourS_structures = regexp(mat_files, strcat(str,'_[0-9]*_ourS_structure'));
 ourS_struct_inds = find(~cellfun(@isempty, ourS_structures));
-
-nosepokeS_structures = regexp(mat_files, strcat(str,'_[0-9]*_nosepokeS_structure'));
-nosepokeS_struct_inds = find(~cellfun(@isempty, nosepokeS_structures));
-
-transitionS_structures = regexp(mat_files, strcat(str,'_[0-9]*_transitionS_structure'));
-transitionS_struct_inds = find(~cellfun(@isempty, transitionS_structures));
 
 %% Add session data into mouse data structures
 
@@ -123,6 +117,19 @@ for i = 1:length(ourS_struct_inds)
    
 end
 
+data_path = 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Nosepokes\Session Data';
+windows = 0; % change to 1 if using Windows computer
+
+if windows
+    mat_files = dir([data_path,'\*.mat']);
+else
+    mat_files = dir([data_path,'/*.mat']);
+end
+
+mat_files = {mat_files.name}'; % this gives us a cell of the names of each file in the directory
+
+nosepokeS_structures = regexp(mat_files, strcat(str,'_[0-9]*_nosepokeS_structure'));
+nosepokeS_struct_inds = find(~cellfun(@isempty, nosepokeS_structures));
     
 % Add session data to mousenosepokeS
 for i = 1:length(nosepokeS_struct_inds)
@@ -136,29 +143,42 @@ for i = 1:length(nosepokeS_struct_inds)
     end
     
     % Collecting Precue Data
-    mousenosepokeS.Precue.Premature = [mousenosepokeS.Precue.Premature; ourS.Precue.Premature];
-    mousenosepokeS.Precue.CorrGo = [mousenosepokeS.Precue.CorrGo; ourS.Precue.CorrGo];
-    mousenosepokeS.Precue.CorrNoGo = [mousenosepokeS.Precue.CorrNoGo; ourS.Precue.CorrNoGo];
-    mousenosepokeS.Precue.InCorrGo = [mousenosepokeS.Precue.InCorrGo; ourS.Precue.InCorrGo];
-    mousenosepokeS.Precue.InCorrNoGo = [mousenosepokeS.Precue.InCorrNoGo; ourS.Precue.InCorrNoGo];   
+    mousenosepokeS.Precue.Premature = [mousenosepokeS.Precue.Premature; nosepokeS.Precue.Premature];
+    mousenosepokeS.Precue.CorrGo = [mousenosepokeS.Precue.CorrGo; nosepokeS.Precue.CorrGo];
+    mousenosepokeS.Precue.CorrNoGo = [mousenosepokeS.Precue.CorrNoGo; nosepokeS.Precue.CorrNoGo];
+    mousenosepokeS.Precue.InCorrGo = [mousenosepokeS.Precue.InCorrGo; nosepokeS.Precue.InCorrGo];
+    mousenosepokeS.Precue.InCorrNoGo = [mousenosepokeS.Precue.InCorrNoGo; nosepokeS.Precue.InCorrNoGo];   
     
     % Collecting Cue Data
-    mousenosepokeS.Cue.CorrGo = [mousenosepokeS.Cue.CorrGo; ourS.Cue.CorrGo];
-    mousenosepokeS.Cue.InCorrNoGo = [mousenosepokeS.Cue.InCorrNoGo; ourS.Cue.InCorrNoGo];
+    mousenosepokeS.Cue.CorrGo = [mousenosepokeS.Cue.CorrGo; nosepokeS.Cue.CorrGo];
+    mousenosepokeS.Cue.InCorrNoGo = [mousenosepokeS.Cue.InCorrNoGo; nosepokeS.Cue.InCorrNoGo];
     
     % Collecting Reward Data
-    mousenosepokeS.Reward.CorrGo = [mousenosepokeS.Reward.CorrGo; ourS.Reward.CorrGo];
-    mousenosepokeS.Reward.CorrNoGo = [mousenosepokeS.Reward.CorrNoGo; ourS.Reward.CorrNoGo];
+    mousenosepokeS.Reward.CorrGo = [mousenosepokeS.Reward.CorrGo; nosepokeS.Reward.CorrGo];
+    mousenosepokeS.Reward.CorrNoGo = [mousenosepokeS.Reward.CorrNoGo; nosepokeS.Reward.CorrNoGo];
     
     % Collecting ITI Data
-    mousenosepokeS.ITI.Premature = [mousenosepokeS.ITI.Premature; ourS.ITI.Premature];
-    mousenosepokeS.ITI.CorrGo = [mousenosepokeS.ITI.CorrGo; ourS.ITI.CorrGo];
-    mousenosepokeS.ITI.CorrNoGo = [mousenosepokeS.ITI.CorrNoGo; ourS.ITI.CorrNoGo];
-    mousenosepokeS.ITI.InCorrGo = [mousenosepokeS.ITI.InCorrGo; ourS.ITI.InCorrGo];
-    mousenosepokeS.ITI.InCorrNoGo = [mousenosepokeS.ITI.InCorrNoGo; ourS.ITI.InCorrNoGo];
+    mousenosepokeS.ITI.Premature = [mousenosepokeS.ITI.Premature; nosepokeS.ITI.Premature];
+    mousenosepokeS.ITI.CorrGo = [mousenosepokeS.ITI.CorrGo; nosepokeS.ITI.CorrGo];
+    mousenosepokeS.ITI.CorrNoGo = [mousenosepokeS.ITI.CorrNoGo; nosepokeS.ITI.CorrNoGo];
+    mousenosepokeS.ITI.InCorrGo = [mousenosepokeS.ITI.InCorrGo; nosepokeS.ITI.InCorrGo];
+    mousenosepokeS.ITI.InCorrNoGo = [mousenosepokeS.ITI.InCorrNoGo; nosepokeS.ITI.InCorrNoGo];
     
 end
 
+data_path = 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Transitions\Session Data';
+windows = 0; % change to 1 if using Windows computer
+
+if windows
+    mat_files = dir([data_path,'\*.mat']);
+else
+    mat_files = dir([data_path,'/*.mat']);
+end
+
+mat_files = {mat_files.name}'; % this gives us a cell of the names of each file in the directory
+
+transitionS_structures = regexp(mat_files, strcat(str,'_[0-9]*_transitionS_structure'));
+transitionS_struct_inds = find(~cellfun(@isempty, transitionS_structures));
     
 % Add session data to mousetransitionS
 for i = 1:length(transitionS_struct_inds)
@@ -203,12 +223,20 @@ for i = 1:length(transitionS_struct_inds)
 end
 
 %% Save Structures
+cd 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Trial Periods\Mouse Data'
 
 filename = strcat(str, '_mouseS_Go_NoGo_structure');
 save(filename, 'mouseS');
 
+cd 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Nosepokes\Mouse Data'
+
 filename2 = strcat(str, '_mousenosepokeS_Go_NoGo_structure');
 save(filename2, 'mousenosepokeS');
 
+cd 'C:\Users\tyree\OneDrive for Business\de Lecea Lab information\Fiber Photometry\Suszie and John''s new MATLAB code\~Transitions\Mouse Data'
+
 filename3 = strcat(str, '_mousetransitionS_Go_NoGo_structure');
 save(filename3, 'mousetransitionS')
+
+clear
+clc
